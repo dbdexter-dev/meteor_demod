@@ -1,3 +1,6 @@
+/** 
+ * Basic functions and structs to deal with I/Q samples coming from a .wav flie
+ */
 #ifndef _METEOR_WAVFILE_H
 #define _METEOR_WAVFILE_H
 
@@ -23,8 +26,6 @@ struct wave_header
 };
 
 
-int open_samples_file(Sample *samp, char *fname);
-int read_next(Sample *samp, size_t count);
-int close_samples_file();
+Sample* open_samples_file(char *fname);
 
 #endif

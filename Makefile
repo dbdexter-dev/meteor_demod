@@ -6,10 +6,10 @@ PREFIX=/usr
 
 default: debug
 
-debug: CFLAGS+= -g
+debug: CFLAGS+= -g -D__DEBUG
 debug: src
 release: CFLAGS+= -O2 -march=native
-release: strip
+release: src strip
 
 src: 
 	$(MAKE) -C $@

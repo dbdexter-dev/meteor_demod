@@ -1,0 +1,17 @@
+/** Moving average AGC, there's not much to it really */
+#ifndef _METEOR_AGC_H
+#define _METEOR_AGC_H
+
+#include <complex.h>
+
+typedef struct {
+	unsigned window_size;
+	float avg;
+	float gain;
+	float target_ampl;
+} Agc;
+
+void          agc_init(float target_ampl, unsigned window_size);
+float complex agc_apply(float complex sampl);
+
+#endif
