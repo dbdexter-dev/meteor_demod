@@ -22,6 +22,7 @@ main(int argc, char *argv[])
 	Sample *samples;
 	Sample *interp;
 
+	/* TODO proper argument handling and stuff */
 	if (argc < 2) {
 		usage(argv[0]);
 	}
@@ -45,10 +46,10 @@ main(int argc, char *argv[])
 			cur_sample = interp->data[i];
 			/* TODO root-raised cosine filter to match the transmitter */
 			/* TODO coarse tuning with fourth-power FFT analysis */
-			/* TODO AGC */
+			/* TODO AGC (wip) */
 			agc_out = agc_apply(cur_sample);
 			printf("AGC in: %.2f, out: %.2f\n", cabs(cur_sample), cabs(agc_out));
-			/* TODO interpolation */
+			/* TODO interpolation (now in the while loop itself)*/
 			/* TODO symbol resampling */
 			/* TODO fine frequency/phase tuning */
 			/* TODO writing to file */
@@ -57,6 +58,7 @@ main(int argc, char *argv[])
 
 	}
 
+	interp->close(interp);
 	samples->close(samples);
 	return 0;
 }

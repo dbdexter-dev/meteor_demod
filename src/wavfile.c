@@ -5,22 +5,31 @@
 #include "utils.h"
 #include "wavfile.h"
 
+typedef struct {
+	FILE *fd;
+} WavState;
+
 static int wav_read(Sample *samp, size_t count);
 static int wav_close(Sample *samp);
 
-static FILE* _fd;
 extern int errno;
 
 Sample*
 open_samples_file(char *fname)
 {
 	Sample *samp;
+	WavState *state;
 	struct wave_header _header;
+	FILE *fd;
 
 	errno = 0;
-	if ((_fd = fopen(fname, "r"))) {
+	if ((fd = fopen(fname, "r"))) {
 		samp = safealloc(sizeof(*samp));
-		fread(&_header, sizeof(struct wave_header), 1, _fd);
+		samp->_backend = safealloc(sizeof(WavState));
+		state = (WavState*)samp->_backend;
+		state->fd = fd;
+
+		fread(&_header, sizeof(struct wave_header), 1, state->fd);
 
 		/* If any of these comparisons return non-zero, the file is
 		 * not a valid WAVE file: abort */
@@ -49,8 +58,11 @@ open_samples_file(char *fname)
 int
 wav_read(Sample *self, size_t count)
 {
+	WavState *state;
 	short* tmp;
 	int i;
+
+	state = (WavState*)self->_backend;
 
 	if (!self->data) {
 		self->data = safealloc(count * sizeof(*self->data));
@@ -63,7 +75,7 @@ wav_read(Sample *self, size_t count)
 
 	tmp = malloc(2*self->bps/8);
 	for (i=0; i<count; i++) {
-		if (fread(tmp, self->bps/8, 2, _fd) > 0) {
+		if (fread(tmp, self->bps/8, 2, state->fd) > 0) {
 			self->data[i] = tmp[0] + tmp[1] * I;
 		} else {
 			break;
@@ -77,7 +89,12 @@ wav_read(Sample *self, size_t count)
 int
 wav_close(Sample *self)
 {
-	fclose(_fd);
+	WavState *state;
+	
+	state = (WavState*)self->_backend;
+	fclose(state->fd);
+
+	free(self->_backend);
 	free(self);
 	return 0;
 }

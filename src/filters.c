@@ -1,6 +1,9 @@
 #include <stdarg.h>
+#include <math.h>
 #include "filters.h"
 #include "utils.h"
+
+inline float compute_rrc_coeff(int stage_no, unsigned n_taps, unsigned osf, float beta);
 
 /* Create a new filter, a FIR if back_count is 0. Variable length arguments
  * indicate the various coefficients to be used in the filter */
@@ -10,6 +13,8 @@ filter_new(unsigned fwd_count, unsigned back_count, ...)
 	Filter *flt;
 	int i;
 	va_list flt_parm;
+	double *fwd_coeff;
+	double *back_coeff;
 
 	va_start(flt_parm, back_count);
 
@@ -17,19 +22,21 @@ filter_new(unsigned fwd_count, unsigned back_count, ...)
 
 	flt->fwd_count = fwd_count;
 	if (fwd_count) {
+		fwd_coeff = va_arg(flt_parm, double*);
 		flt->fwd_coeff = safealloc(sizeof(*flt->fwd_coeff) * fwd_count);
 		flt->fwd_mem = safealloc(sizeof(*flt->fwd_mem) * fwd_count);
 		for (i=0; i<fwd_count; i++) {
-			flt->fwd_coeff[i] = va_arg(flt_parm, double);
+			flt->fwd_coeff[i] = fwd_coeff[i];
 		}
 	}
 
 	flt->back_count = back_count;
 	if (back_count) {
+		back_coeff = va_arg(flt_parm, double*);
 		flt->back_coeff = safealloc(sizeof(*flt->back_coeff) * back_count);
 		flt->back_mem = safealloc(sizeof(*flt->back_mem) * back_count) ;
 		for (i=0; i<back_count; i++) {
-			flt->back_coeff[i] = va_arg(flt_parm, double);
+			flt->back_coeff[i] = back_coeff[i];
 		}
 	}
 
@@ -79,10 +86,21 @@ filter_copy(Filter *orig)
 
 /* Root raised cosine filter */
 Filter*
-filter_rrc(float beta)
+filter_rrc(unsigned order, unsigned osf, float beta)
 {
-	Filter *rrc = NULL;
-	/* TODO actual filter implementation */
+	int i;
+	unsigned taps;
+	float *coeffs;
+	Filter *rrc;
+
+	taps = 2*order+1;
+
+	coeffs = safealloc(sizeof(*coeffs) * (taps));
+	for (i=0; i<taps; i++) {
+		coeffs[i] = compute_rrc_coeff(i, taps, osf, beta);
+	}
+
+	rrc = filter_new(2*taps+1, 0, coeffs);
 	return rrc;
 }
 
@@ -140,3 +158,19 @@ filter_free(Filter *self)
 	}
 	free(self);
 }
+
+/*Static functions {{{*/
+inline float
+compute_rrc_coeff(int stage_no, unsigned n_taps, unsigned osf, float beta)
+{
+	float coeff;
+	float t;
+
+	t = (n_taps - stage_no)/osf;
+
+	coeff = sin(M_PI*t*(1-beta)) + 4*beta*t*cos(M_PI*t*(1+beta));
+	coeff /= M_PI*t*(1-(4*beta*t)*(4*beta*t));
+
+	return coeff;
+}
+/*}}}*/

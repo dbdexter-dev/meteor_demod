@@ -9,7 +9,7 @@ typedef struct {
 	Sample *src;
 	unsigned factor;
 	int interpd_offset;
-} InterpStatus;
+} InterpState;
 
 static int interp_read(Sample *self, size_t count);
 static int interp_close(Sample *self);
@@ -18,7 +18,7 @@ Sample*
 interp_init(Sample* src, unsigned factor)
 {
 	Sample *interp;
-	InterpStatus *status;
+	InterpState *status;
 
 	interp = safealloc(sizeof(*interp));
 
@@ -29,8 +29,8 @@ interp_init(Sample* src, unsigned factor)
 	interp->read = interp_read;
 	interp->close = interp_close;
 
-	interp->_backend = safealloc(sizeof(InterpStatus));
-	status = (InterpStatus*) interp->_backend;
+	interp->_backend = safealloc(sizeof(InterpState));
+	status = (InterpState*) interp->_backend;
 
 	status->src = src;
 	status->factor = factor;
@@ -46,7 +46,7 @@ interp_init(Sample* src, unsigned factor)
 static int
 interp_read(Sample *self, size_t count)
 {
-	InterpStatus *status;
+	InterpState *status;
 	int i, j;
 	int factor;
 	Sample *src;
@@ -57,7 +57,7 @@ interp_read(Sample *self, size_t count)
 	float complex avg;
 
 	/* Retrieve the backend info */
-	status = (InterpStatus*)self->_backend;
+	status = (InterpState*)self->_backend;
 	factor = status->factor;
 	src = status->src;
 	interpd_offset = status->interpd_offset;
@@ -101,9 +101,6 @@ interp_read(Sample *self, size_t count)
 	/* Populate data with the real samples */
 	for (; i<true_samp_count; i++) {
 		self->data[i*factor + (factor - interpd_offset)] = src->data[i];
-#ifdef __DEBUG
-		printf("[interpolator.c] Read (%f %f)\n", creal(src->data[i]), cimag(src->data[i]));
-#endif
 	}
 
 	/* Linearly interpolate */

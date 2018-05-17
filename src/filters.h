@@ -18,6 +18,6 @@ Filter* filter_new(unsigned fwd_count, unsigned back_count, ...);
 Filter* filter_copy(Filter *orig);
 float   filter_fwd(Filter *flt, float complex in);
 void    filter_free(Filter *flt);
-Filter* filter_rrc(float beta);
+Filter* filter_rrc(unsigned taps, unsigned osf, float beta);
 
 #endif

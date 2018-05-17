@@ -16,6 +16,7 @@ nco_init(float freq)
 	return nco;
 }
 
+/* CORDIC algorithm for sine-cosine generation */
 float complex
 nco_step(Nco *nco)
 {
