@@ -11,7 +11,7 @@ typedef struct {
 	float alpha;
 } Costas;
 
-Costas* costas_init(Filter *lpf, Filter *loop_filter, float alpha);
-void    costas_resync(Costas *self, float complex *samp);
+Costas*       costas_init(Filter *lpf, Filter *loop_filter, float alpha);
+float complex costas_resync(Costas *self, float complex samp);
 
 #endif

@@ -1,5 +1,10 @@
+#ifdef __DEBUG
+#include <stdio.h>
+#endif
 #include "agc.h"
 #include "utils.h"
+
+#define AGC_MAX_GAIN 200
 
 static Agc agc;
 
@@ -14,12 +19,15 @@ agc_init(float target_ampl, unsigned window_size)
 float complex
 agc_apply(float complex sampl)
 {
-	float ampl;
+	float rho;
 
-	ampl = cabs(sampl);
-	agc.avg = (agc.avg * (agc.window_size - 1) + ampl) / agc.window_size;
+	rho = cabs(sampl);
+	agc.avg = (agc.avg * (agc.window_size - 1) + rho) / agc.window_size;
 
 	agc.gain = agc.target_ampl / agc.avg;
+	if (agc.gain > AGC_MAX_GAIN) {
+		agc.gain = AGC_MAX_GAIN;
+	}
 	return sampl * agc.gain;
 }
 

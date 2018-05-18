@@ -72,6 +72,9 @@ wav_read(Sample *self, size_t count)
 	}
 
 	self->count = count;
+#ifdef __DEBUG
+/*	printf("[wavfile.c] Read %ld bytes\n", count);*/
+#endif
 
 	tmp = malloc(2*self->bps/8);
 	for (i=0; i<count; i++) {
@@ -81,8 +84,8 @@ wav_read(Sample *self, size_t count)
 			break;
 		}
 	}
-
 	free(tmp);
+
 	return i;
 }
 
