@@ -3,6 +3,15 @@
 #include <math.h>
 #include "utils.h"
 
+/* Print usage info */
+void
+usage(char *pname)
+{
+	fprintf(stderr, "Usage: %s [options] file\n", pname);
+	fprintf(stderr, "\t-r, --rate <rate>      Set the symbol rate to <rate> (default: 72000)\n"
+	                "\t-o, --output <file>    Output the decoded symbols to <file>\n");
+	exit(0);
+}
 /* Clamp a real value to a signed char */
 char
 clamp(float x)
@@ -42,13 +51,6 @@ fatal(char *msg)
 	exit(1);
 }
 
-/* Print usage info */
-void
-usage(char *pname)
-{
-	fprintf(stderr, "Usage: %s <file to decode>\n", pname);
-	exit(0);
-}
 
 /* Malloc with abort on error */
 void*

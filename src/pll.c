@@ -56,7 +56,7 @@ costas_resync(Costas *self, float complex samp)
 #endif
 	nco_adjust(self->nco, -error * self->alpha);
 
-	return i_interm + I * q_interm;
+	return (i_interm + I * q_interm);
 }
 
 void

@@ -47,10 +47,10 @@ open_samples_file(char *fname)
 			printf("Sample rate:       %d\n", samp->samplerate);
 			printf("Bits per sample:   %d\n", samp->bps);
 #endif
-		} else {
-			return NULL;
-		}
-	}
+		}	
+	} else {
+        return NULL;
+    }
 
 	return samp;
 }
