@@ -7,7 +7,7 @@
 #include "utils.h"
 
 float compute_rrc_coeff(int stage_no, unsigned n_taps, unsigned osf, float alpha);
-double compute_lpf_coeff(int stage_no, unsigned order, float wc, float alpha);
+float compute_lpf_coeff(int stage_no, unsigned order, float wc, float alpha);
 
 /* Create a new filter, a FIR if back_count is 0. Variable length arguments
  * indicate the various coefficients to be used in the filter */
@@ -30,7 +30,7 @@ filter_new(unsigned fwd_count, unsigned back_count, ...)
 	if (fwd_count) {
 		fwd_coeff = va_arg(flt_parm, double*);
 		flt->fwd_coeff = safealloc(sizeof(*flt->fwd_coeff) * fwd_count);
-		flt->mem = safealloc(sizeof(*flt->mem) * (fwd_count + 1));
+		flt->mem = safealloc(sizeof(*flt->mem) * fwd_count);
 		for (i=0; i<fwd_count; i++) {
 			flt->fwd_coeff[i] = (float)fwd_coeff[i];
 		}
@@ -101,13 +101,27 @@ filter_butt2(float zeta, float wn, float k)
 	t1 = k/(wn*wn);
 	t2 = 2*zeta/wn;
 
-	fwd_parm[0] = 4*k/t1*(1.+t2/2);
-	fwd_parm[1] = -8*k/(t1);
-	fwd_parm[2] = 4*k/t1*(1.+t2/2);
+	fwd_parm[0] = (4.0*k/t1)*(1.+t2/2.0);
+	fwd_parm[1] = (8.0*k/t1);
+	fwd_parm[2] = (4.0*k/t1)*(1.-t2/2.0);
 
 	back_parm[0] = 1.0;
 	back_parm[1] = -2.0;
 	back_parm[2] = 1.0;
+
+/*	fwd_parm[0] = alpha*alpha+M_SQRT2*alpha+1;*/
+/*	fwd_parm[1] = 2*alpha*alpha;*/
+/*	fwd_parm[2] = alpha*(alpha-M_SQRT2);*/
+
+/*	back_parm[0] = alpha*alpha;*/
+/*	back_parm[1] = 2*alpha*alpha;*/
+/*	back_parm[2] = alpha*alpha;*/
+#ifdef __DEBUG
+	fprintf(stderr, "[filters.c]:\t%f\t%f\t%f\n\t\t%f\t%f\t%f\n",
+			fwd_parm[0], fwd_parm[1], fwd_parm[2],
+			back_parm[0], back_parm[1], back_parm[2]
+			);
+#endif
 
 	flt = filter_new(3, 3, fwd_parm, back_parm);
 	return flt;
@@ -120,14 +134,17 @@ filter_lowpass(unsigned order, float wc)
 	Filter *lpf;
 	double *coeffs;
 	int i;
-	const int alpha = 0.5;      /* Hamming window */
+	const int alpha = 0.5;      /* Raised cosine window */
 
-	coeffs = safealloc(sizeof(*coeffs) * (order+1));
-	for (i=0; i<=order; i++) {
+	order++;
+
+	coeffs = safealloc(sizeof(*coeffs) * order);
+	for (i=0; i<order; i++) {
 		coeffs[i] = compute_lpf_coeff(i, order, wc, alpha);
 	}
 
-	lpf = filter_new(order+1, 0, coeffs);
+	lpf = filter_new(order, 0, coeffs);
+	free(coeffs);
 
 	return lpf;
 }
@@ -149,6 +166,7 @@ filter_rrc(unsigned order, unsigned osf, float alpha)
 	}
 
 	rrc = filter_new(taps, 0, coeffs);
+	free(coeffs);
 	return rrc;
 }
 
@@ -159,8 +177,9 @@ filter_fwd(Filter *self, float complex in)
 {
 	int i;
 	float complex out;
-	if (!self->fwd_count && ! self->back_count) {
-		return 0;
+
+	if (!self->fwd_count && !self->back_count) {
+		return in;
 	}
 
 	/* Update the memory nodes */
@@ -169,7 +188,7 @@ filter_fwd(Filter *self, float complex in)
 	}
 
 	/* Calculate the new mem[0] value */
-	for (i=0; i<self->back_count; i--) {
+	for (i=1; i<self->back_count; i++) {
 		in -= self->mem[i] * self->back_coeff[i];
 	}
 	self->mem[0] = in;
@@ -178,6 +197,10 @@ filter_fwd(Filter *self, float complex in)
 	out = 0;
 	for (i=0; i<self->fwd_count; i++) {
 		out += self->mem[i] * self->fwd_coeff[i];
+	}
+
+	if (self->back_count) {
+		fprintf(stderr, "[filters.c]: memory: %f %f %f\n", creal(self->mem[0]), creal(self->mem[1]), creal(self->mem[2]));
 	}
 
 	return out;
@@ -205,8 +228,8 @@ filter_wn_prewarp(float wn_digital, unsigned samplerate)
 }
 
 /*Static functions {{{*/
-/* Straight-up windowing */
-inline double 
+/* Variable alpha windowing */
+inline float 
 compute_lpf_coeff(int stage_no, unsigned order, float wc, float alpha)
 {
 	double coeff;
@@ -214,14 +237,16 @@ compute_lpf_coeff(int stage_no, unsigned order, float wc, float alpha)
 	int shifted_time;
 
 	order++;
-	shifted_time = (stage_no - (order)/2);
+	shifted_time = stage_no - ((order-1)/2);
+
+	weight = alpha + (1-alpha)*cos(2*shifted_time*M_PI/order);
 	if (shifted_time == 0) {
-		return 1;
+		coeff =  wc/M_PI;
+	} else {
+		coeff = wc/M_PI*sin(wc/M_PI*shifted_time)/(wc/M_PI*shifted_time);
 	}
 
-	weight = alpha + (1-alpha)*cos(stage_no*M_PI/order);
-	coeff = wc/M_PI*sin(wc/M_PI*shifted_time)/(wc/M_PI*shifted_time);
-	return coeff * weight;
+	return (float)coeff * (float)weight;
 }
 
 inline float

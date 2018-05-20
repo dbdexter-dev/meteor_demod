@@ -3,14 +3,28 @@
 #include <math.h>
 #include "utils.h"
 
+#define VERSION "0.1a"
+
 /* Print usage info */
 void
 usage(char *pname)
 {
-	fprintf(stderr, "Usage: %s [options] file\n", pname);
-	fprintf(stderr, "\t-r, --rate <rate>      Set the symbol rate to <rate> (default: 72000)\n"
-	                "\t-o, --output <file>    Output the decoded symbols to <file>\n");
+    fprintf(stderr, "\n\t~ Meteor-M2 LRPT demodulator v%s ~\n\n", VERSION);
+	fprintf(stderr, "Usage: %s [options] file_in\n", pname);
+	fprintf(stderr, 
+	        "   -h, --help             Print this help screen\n"
+	        "   -r, --rate <rate>      Set the symbol rate to <rate> (default: 72000)\n"
+	        "   -s, --oversamp <mult>  Set the interpolator oversampling multiplier to <mult> (default: 4)\n"
+	        "   -v, --version          Print version info\n"
+	        );
 	exit(0);
+}
+
+void
+version()
+{
+    fprintf(stderr, "Meteor_demod v%s\nReleased under the GNU GPLv3\n\n", VERSION);
+    exit(0);
 }
 /* Clamp a real value to a signed char */
 char

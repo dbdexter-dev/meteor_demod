@@ -14,5 +14,8 @@ release: src strip
 src: 
 	$(MAKE) -C $@
 
+strip:
+	$(MAKE) -C src strip
+
 clean:
 	$(MAKE) -C src clean

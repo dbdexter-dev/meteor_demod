@@ -6,7 +6,7 @@
 
 typedef struct {
 	Nco *nco;
-	Filter *lpf_i, *lpf_q;
+	Filter *lpf;
 	Filter *loop_filter;
 	float alpha;
 } Costas;

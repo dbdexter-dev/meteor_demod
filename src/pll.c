@@ -7,6 +7,7 @@
 #include "utils.h"
 
 static float costas_compute_delta(float i_branch, float q_branch);
+float freq_clamp(float freq, float max);
 
 /* Initialize a Costas loop for carrier frequency/phase recovery */
 Costas*
@@ -16,11 +17,10 @@ costas_init(Filter *lpf, Filter *loop_filter, float alpha)
 
 	costas = safealloc(sizeof(*costas));
 
-	costas->lpf_i = filter_copy(lpf);
-	costas->lpf_q = filter_copy(lpf);
+	costas->lpf = filter_copy(lpf);
 	costas->loop_filter = filter_copy(loop_filter);
 	costas->alpha = alpha;
-	costas->nco = nco_init(-0.000001);
+	costas->nco = nco_init(0);
 
 	return costas;
 }
@@ -28,42 +28,64 @@ costas_init(Filter *lpf, Filter *loop_filter, float alpha)
 float complex 
 costas_resync(Costas *self, float complex samp)
 {
-	float i_interm, q_interm;
-	float complex nco_out;
-	float error;
+	const float damping = 1/M_SQRT2;
+	const float bw = 0.015;
+	float denom = (1.0 + 2.0*damping*bw + bw*bw);
+	float alpha = (4*damping*bw)/denom;
+	float beta = (4*bw*bw)/denom;
 
-	i_interm = creal(samp);
-	q_interm = cimag(samp);
+	float complex interm;
+	float complex nco_out;
+	float complex retval;
+	float error;
 
 	nco_out = nco_step(self->nco);
 
-	/* Mix with LO */
-	i_interm = creal(nco_out) * i_interm;
-	q_interm = cimag(nco_out) * q_interm;
-
-	/* Low pass filter */
-	i_interm = creal(filter_fwd(self->lpf_i, i_interm));
-	q_interm = creal(filter_fwd(self->lpf_q, q_interm));
+	/* Mix with LO and low pass filter */
+	retval = samp * conj(nco_out);
+	interm = retval;
+/*	retval = filter_fwd(self->lpf, retval);*/
+/*	interm = filter_fwd(self->lpf, retval);*/
 
 	/* Calculate the phase delta */
-	error = costas_compute_delta(i_interm, q_interm);
+	error = costas_compute_delta(creal(retval), cimag(retval))/255;
+/*	error = filter_fwd(self->lpf, error);*/
+	error = freq_clamp(error, 1.0);
+/*	error = filter_fwd(self->loop_filter, error);*/
 	
-	/* Apply the phase delta */
-	error = filter_fwd(self->loop_filter, error);
 #ifdef __DEBUG
-/*	printf("[pll.c] %f %f\n", i_interm, q_interm);*/
-	printf("%f\n", error);
+	fprintf(stderr, "[pll.c] %f %f\n", alpha, beta);
+	fprintf(stderr, "[pll.c] post-filter error: %f\n", error);
+	printf("%f %f %f %f %f %f %f %f\n",
+	      creal(nco_out), cimag(nco_out),
+	      creal(samp), cimag(samp),
+	      creal(interm), cimag(interm), 
+	      self->nco->freq, 
+	      error);
 #endif
-	nco_adjust(self->nco, -error * self->alpha);
 
-	return (i_interm + I * q_interm);
+	/* Apply the phase delta */
+	self->nco->phase = fmod(self->nco->phase + alpha*error, 2*M_PI);
+	self->nco->freq = freq_clamp(self->nco->freq + beta*error, 1.0);
+
+	return retval;
+}
+
+inline float
+freq_clamp(float freq, float max_abs)
+{
+	if (freq > max_abs) {
+		return max_abs;
+	} else if (freq < -max_abs) {
+		return -max_abs;
+	}
+	return freq;
 }
 
 void
 costas_free(Costas *cst)
 {
-	filter_free(cst->lpf_i);
-	filter_free(cst->lpf_q);
+	filter_free(cst->lpf);
 	filter_free(cst->loop_filter);
 	free(cst);
 }
@@ -73,13 +95,9 @@ costas_free(Costas *cst)
 float
 costas_compute_delta(float i_branch, float q_branch)
 {
-	int i_sign, q_sign;
 	float error;
-
-	i_sign = slice(i_branch);
-	q_sign = slice(q_branch);
-
-	error = q_branch * i_sign + i_branch * q_sign;
+	error = q_branch * slice(i_branch) -
+	        i_branch * slice(q_branch);
 	return error;
 }
 /*}}}*/
