@@ -7,6 +7,8 @@
 
 typedef struct {
 	FILE *fd;
+	size_t total_bytes;
+	size_t bytes_read;
 } WavState;
 
 static int wav_read(Sample *samp, size_t count);
@@ -42,19 +44,20 @@ open_samples_file(char *fname)
 			samp->bps = _header.bits_per_sample;
 			samp->read = wav_read;
 			samp->close = wav_close;
-#ifdef __DEBUG
-			printf("Opened file %s:\n", fname);
-			printf("Sample rate:       %d\n", samp->samplerate);
-			printf("Bits per sample:   %d\n", samp->bps);
-#endif
-		}	
+			state->total_bytes = _header.subchunk2_size;
+			state->bytes_read = 0;
+		}
 	} else {
-        return NULL;
+		fatal("Invalid .wav file specified\n");
+		/* Not reached */
+		return NULL;
     }
 
 	return samp;
 }
 
+/* Read $count samples from the opened file, populating the data[] array as
+ * expected. */
 int
 wav_read(Sample *self, size_t count)
 {
@@ -72,9 +75,6 @@ wav_read(Sample *self, size_t count)
 	}
 
 	self->count = count;
-#ifdef __DEBUG
-/*	printf("[wavfile.c] Read %ld bytes\n", count);*/
-#endif
 
 	tmp = malloc(2*self->bps/8);
 	for (i=0; i<count; i++) {
@@ -86,18 +86,29 @@ wav_read(Sample *self, size_t count)
 	}
 	free(tmp);
 
+	/* Update the byte count */
+	state->bytes_read += i*self->bps/8*2;
+
 	return i;
+}
+
+float
+wav_get_perc(Sample *self)
+{
+	const WavState* state = self->_backend;
+	return (float)state->bytes_read/state->total_bytes*100;
 }
 
 int
 wav_close(Sample *self)
 {
 	WavState *state;
-	
+
 	state = (WavState*)self->_backend;
 	fclose(state->fd);
 
 	free(self->_backend);
+	free(self->data);
 	free(self);
 	return 0;
 }

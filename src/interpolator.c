@@ -10,6 +10,7 @@ typedef struct {
 	unsigned factor;
 } InterpState;
 
+/* Initialize the interpolator, which will use a RRC filter at its core */
 Sample*
 interp_init(Sample* src, float alpha, unsigned order, unsigned factor)
 {
@@ -82,6 +83,7 @@ interp_read(Sample *self, size_t count)
 int
 interp_close(Sample *self)
 {
+	filter_free(((InterpState*)(self->_backend))->rrc);
 	free(self->_backend);
 	free(self->data);
 	free(self);

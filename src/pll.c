@@ -5,6 +5,8 @@
 #include "pll.h"
 #include "utils.h"
 
+#define FREQ_MAX 1.0
+
 static float costas_compute_delta(float i_branch, float q_branch);
 
 /* Initialize a Costas loop for carrier frequency/phase recovery */
@@ -26,7 +28,7 @@ costas_init(float freq, float damping, float bw)
 	return costas;
 }
 
-float complex 
+float complex
 costas_resync(Costas *self, float complex samp)
 {
 	float complex nco_out;
@@ -41,10 +43,16 @@ costas_resync(Costas *self, float complex samp)
 	/* Calculate the phase delta */
 	error = costas_compute_delta(creal(retval), cimag(retval))/255;
 	error = float_clamp(error, 1.0);
-	
-	/* Apply the phase delta */
+
+	/* Apply the phase and frequency delta */
 	self->nco_phase = fmod(self->nco_phase + self->nco_freq + self->alpha*error, 2*M_PI);
-	self->nco_freq = float_clamp(self->nco_freq + self->beta*error, 1.0);
+	self->nco_freq = float_clamp(self->nco_freq + self->beta*error, FREQ_MAX);
+
+	if (self->nco_freq >= FREQ_MAX) {
+		self->nco_freq = -FREQ_MAX;
+	} else if (self->nco_freq <= -FREQ_MAX) {
+		self->nco_freq = FREQ_MAX;
+	}
 
 	return retval;
 }

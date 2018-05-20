@@ -2,32 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "utils.h"
 
-#define VERSION "0.1a"
+#define FNAME_FMT "LRPT_%Y_%m_%d-%H_%M.s"
 
-/* Print usage info */
-void
-usage(char *pname)
-{
-    fprintf(stderr, "\n\t~ Meteor-M2 LRPT demodulator v%s ~\n\n", VERSION);
-	fprintf(stderr, "Usage: %s [options] file\n", pname);
-	fprintf(stderr, 
-			"   -o, --output           Output decoded symbols to <file> (default: lrpt.s)\n"
-	        "   -h, --help             Print this help screen\n"
-	        "   -r, --rate <rate>      Set the symbol rate to <rate> (default: 72000)\n"
-	        "   -s, --oversamp <mult>  Set the interpolator oversampling factor to <mult> (default: 4)\n"
-	        "   -v, --version          Print version info\n"
-	        );
-	exit(0);
-}
-
-void
-version()
-{
-    fprintf(stderr, "Meteor_demod v%s\nReleased under the GNU GPLv3\n\n", VERSION);
-    exit(0);
-}
 /* Clamp a real value to a signed char */
 char
 clamp(float x)
@@ -65,12 +44,25 @@ slice(float x)
 	return 0;
 }
 
-float complex
-rotate(float complex i, float arg)
+/* Generate a unique-ish filename */
+char*
+gen_fname()
 {
-	return i * exp(I * arg);
+	time_t t;
+	char *ret;
+	struct tm *tm;
+
+	t = time(NULL);
+	tm = localtime(&t);
+
+	ret = safealloc(sizeof(*ret) * sizeof("LRPT_yyyy_mm_dd_HH_MM.s"));
+	strftime(ret, sizeof("LRPT_yyyy_mm_dd_HH_MM.s"), FNAME_FMT, tm);
+
+	return ret;
 }
 
+
+/* From byte size to human readable format */
 void
 humanize(size_t count, char *buf)
 {
@@ -93,6 +85,41 @@ humanize(size_t count, char *buf)
 		}
 	}
 }
+
+/* Print usage info */
+void
+usage(char *pname)
+{
+	fprintf(stderr, "\nUsage: %s [options] file\n", pname);
+	fprintf(stderr,
+			"   -b, --bandwidth <bw>   Set the PLL bandwidth to <bw> Hz (default: 20000 Hz)\n"
+			"   -o, --output           Output decoded symbols to <file> (default: LRPT_yyyy_mm_dd_HH_MM.s)\n"
+	        "   -r, --rate <rate>      Set the symbol rate to <rate> (default: 72000 sps)\n"
+	        "   -s, --oversamp <mult>  Set the interpolator oversampling factor to <mult> (default: 4)\n"
+	        "\n"
+	        "   -h, --help             Print this help screen\n"
+	        "   -v, --version          Print version info\n"
+	        );
+	exit(0);
+}
+
+/* Startup banner */
+void
+splash()
+{
+    fprintf(stderr, "\nMeteor-M2 LRPT demodulator v%s\n", VERSION);
+}
+
+
+/* Print version info */
+void
+version()
+{
+	splash();
+    fprintf(stderr, "Released under the GNU GPLv3\n\n");
+    exit(0);
+}
+
 
 /* Abort */
 void

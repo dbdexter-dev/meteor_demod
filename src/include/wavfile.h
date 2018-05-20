@@ -1,5 +1,5 @@
-/** 
- * Basic functions and structs to deal with I/Q samples coming from a .wav flie
+/**
+ * Basic functions and structs to deal with I/Q samples coming from a .wav file.
  */
 #ifndef _METEOR_WAVFILE_H
 #define _METEOR_WAVFILE_H
@@ -27,5 +27,6 @@ struct wave_header
 
 
 Sample* open_samples_file(char *fname);
+float wav_get_perc(Sample *samp);
 
 #endif

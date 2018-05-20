@@ -1,6 +1,7 @@
 # Meteor-M2 Demodulator
 
-The goal of this project is to create a cross-platform QPSK demodulator for the
-Meteor-M2 Russian weather satellite's LRPT downlink. It'll support reading from
-file or directly from an attached rtl-sdr, and outputting the demodulated data
-to a file or to a TCP socket, so that the image can be decoded in real-time.
+This is a free, open-source LRPT demodulator for the Meteor-M2 Russian weather
+satellite. It currently supports reading from a I/Q recording in .wav format,
+and it outputs an 8-bit soft-QPSK file, from which you can generate an image
+with the help of LRPTofflineDecoder or
+[meteor\_decoder](https://github.com/artlav/meteor_decoder).

@@ -1,3 +1,8 @@
+/**
+ * This is the definition of the main struct used to pass samples around. It
+ * stores the data read as well as some metadata that might be useful when
+ * parsing the data stream.
+ */
 #ifndef _METEOR_SAMPLE_H
 #define _METEOR_SAMPLE_H
 
