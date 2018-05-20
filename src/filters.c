@@ -90,65 +90,6 @@ filter_copy(const Filter *orig)
 	return ret;
 }
 
-Filter*
-filter_butt2(float zeta, float wn, float k)
-{
-	Filter *flt;
-	float t1, t2;
-	double fwd_parm[3];
-	double back_parm[3];
-
-	t1 = k/(wn*wn);
-	t2 = 2*zeta/wn;
-
-	fwd_parm[0] = (4.0*k/t1)*(1.+t2/2.0);
-	fwd_parm[1] = (8.0*k/t1);
-	fwd_parm[2] = (4.0*k/t1)*(1.-t2/2.0);
-
-	back_parm[0] = 1.0;
-	back_parm[1] = -2.0;
-	back_parm[2] = 1.0;
-
-/*	fwd_parm[0] = alpha*alpha+M_SQRT2*alpha+1;*/
-/*	fwd_parm[1] = 2*alpha*alpha;*/
-/*	fwd_parm[2] = alpha*(alpha-M_SQRT2);*/
-
-/*	back_parm[0] = alpha*alpha;*/
-/*	back_parm[1] = 2*alpha*alpha;*/
-/*	back_parm[2] = alpha*alpha;*/
-#ifdef __DEBUG
-	fprintf(stderr, "[filters.c]:\t%f\t%f\t%f\n\t\t%f\t%f\t%f\n",
-			fwd_parm[0], fwd_parm[1], fwd_parm[2],
-			back_parm[0], back_parm[1], back_parm[2]
-			);
-#endif
-
-	flt = filter_new(3, 3, fwd_parm, back_parm);
-	return flt;
-}
-
-/* Generic low-pass filter */
-Filter*
-filter_lowpass(unsigned order, float wc)
-{
-	Filter *lpf;
-	double *coeffs;
-	int i;
-	const int alpha = 0.5;      /* Raised cosine window */
-
-	order++;
-
-	coeffs = safealloc(sizeof(*coeffs) * order);
-	for (i=0; i<order; i++) {
-		coeffs[i] = compute_lpf_coeff(i, order, wc, alpha);
-	}
-
-	lpf = filter_new(order, 0, coeffs);
-	free(coeffs);
-
-	return lpf;
-}
-
 /* Root raised cosine filter */
 Filter*
 filter_rrc(unsigned order, unsigned osf, float alpha)
@@ -199,10 +140,6 @@ filter_fwd(Filter *self, float complex in)
 		out += self->mem[i] * self->fwd_coeff[i];
 	}
 
-	if (self->back_count) {
-		fprintf(stderr, "[filters.c]: memory: %f %f %f\n", creal(self->mem[0]), creal(self->mem[1]), creal(self->mem[2]));
-	}
-
 	return out;
 }
 
@@ -229,26 +166,6 @@ filter_wn_prewarp(float wn_digital, unsigned samplerate)
 
 /*Static functions {{{*/
 /* Variable alpha windowing */
-inline float 
-compute_lpf_coeff(int stage_no, unsigned order, float wc, float alpha)
-{
-	double coeff;
-	double weight;
-	int shifted_time;
-
-	order++;
-	shifted_time = stage_no - ((order-1)/2);
-
-	weight = alpha + (1-alpha)*cos(2*shifted_time*M_PI/order);
-	if (shifted_time == 0) {
-		coeff =  wc/M_PI;
-	} else {
-		coeff = wc/M_PI*sin(wc/M_PI*shifted_time)/(wc/M_PI*shifted_time);
-	}
-
-	return (float)coeff * (float)weight;
-}
-
 inline float
 compute_rrc_coeff(int stage_no, unsigned taps, unsigned osf, float alpha)
 {

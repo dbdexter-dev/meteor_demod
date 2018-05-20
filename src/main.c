@@ -5,27 +5,27 @@
 #include "agc.h"
 #include "pll.h"
 #include "interpolator.h"
-#include "nco.h"
 #include "utils.h"
 #include "wavfile.h"
 
-#define SYM_RATE 80000
-#define CHUNKSIZE 32768
+/* Default values */
+#define SYM_RATE 72000
+#define OUTFNAME "lrpt.s"
+#define INTERP_FACTOR 4
 
 #define RRC_ALPHA 0.6
 #define FIR_ORDER 32
-#define INTERP_FACTOR 4
 
-#define COSTAS_LPF_ORD 64
-#define COSTAS_LPF_WN 2*M_PI*SYM_RATE
-#define COSTAS_LOOP_WN 2*M_PI*0.1
-#define COSTAS_LOOP_ZETA 1/M_SQRT2
-#define COSTAS_LOOP_GAIN 1000
-#define COSTAS_ALPHA 0.001
+#define COSTAS_DAMP 1/M_SQRT2
+#define COSTAS_BW 0.015
+#define COSTAS_INIT_FREQ -0.005
 
 #define AGC_WINSIZE 1024 * 8
 #define AGC_TARGET 200
-#define SHORTOPTS "hvr:s:"
+
+#define CHUNKSIZE 32768
+
+#define SHORTOPTS "hvr:s:o:"
 
 int
 main(int argc, char *argv[])
@@ -34,12 +34,12 @@ main(int argc, char *argv[])
 	Agc *agc;
 	float complex cur_sample;
 	Sample *raw_samp, *interp;
+	size_t bytecount;
+	char humancount[8];
+	char point[2];
 
 	/* Costas loop filters and parameters */
-	Filter *costas_lpf;
-	Filter *costas_butt2;
 	Costas *costas;
-	float costas_loop_wn, costas_lpf_wn;
 
 	/* Early-late symbol timing recovery variables */
 	float complex early, late;
@@ -58,7 +58,7 @@ main(int argc, char *argv[])
 
 	optind = 0;
 	symbol_rate = SYM_RATE;
-	out_fname = NULL;
+	out_fname = OUTFNAME;
 	interp_factor = INTERP_FACTOR;
 	while ((c = getopt(argc, argv, SHORTOPTS)) != -1) {
 		switch (c) {
@@ -70,6 +70,9 @@ main(int argc, char *argv[])
 			break;
 		case 's':
 			interp_factor = atoi(optarg);
+			break;
+		case 'o':
+			out_fname = optarg;
 			break;
 		case 'v':
 			version();
@@ -89,14 +92,10 @@ main(int argc, char *argv[])
 	if (!raw_samp) {
 		fatal("Couldn't open samples file");
 	}
-	/* Open possible output file */
-	if (out_fname) {
-		if (!(out_fd = fopen(out_fname, "w"))) {
-			fprintf(stderr, "[ERROR] Couldn't open file %s for output\n", out_fname);
-			usage(argv[0]);
-		}
-	} else {
-		out_fd = stdout;
+	/* Open output file */
+	if (!(out_fd = fopen(out_fname, "w"))) {
+		fprintf(stderr, "[ERROR] Couldn't open file %s for output\n", out_fname);
+		usage(argv[0]);
 	}
 
 	agc = agc_init(AGC_TARGET, AGC_WINSIZE);
@@ -104,16 +103,8 @@ main(int argc, char *argv[])
 	/* Initialize the interpolator, associating raw_samp to it */
 	interp = interp_init(raw_samp, RRC_ALPHA, FIR_ORDER, interp_factor);
 
-	/* Calculate the digital cutoff frequencies */
-	costas_lpf_wn = COSTAS_LPF_WN/(SYM_RATE);
-	costas_loop_wn = COSTAS_LOOP_WN/(SYM_RATE);
-
-	/* Initialize a Costas object with simple low-pass arm filters and a 2nd order
-	 * Butterworth loop filter */
-	costas_lpf = filter_lowpass(COSTAS_LPF_ORD, costas_lpf_wn);
-/*	costas_butt2 = filter_lowpass(COSTAS_LPF_ORD, costas_loop_wn);*/
-	costas_butt2 = filter_butt2(COSTAS_LOOP_ZETA, costas_loop_wn, COSTAS_LOOP_GAIN);
-	costas = costas_init(costas_lpf, costas_butt2, COSTAS_ALPHA);
+	/* Initialize costas loop */
+	costas = costas_init(COSTAS_INIT_FREQ, COSTAS_DAMP, COSTAS_BW);
 
 	/* Initialize the early-late timing variables */
 	resync_period = interp->samplerate/(float)symbol_rate;
@@ -125,6 +116,7 @@ main(int argc, char *argv[])
 	interp->read(interp, FIR_ORDER*interp_factor);
 	
 	/* Main processing loop */
+	bytecount = 0;
 	while ((count = interp->read(interp, CHUNKSIZE))) {
 		for (i=0; i<count; i++) {
 			/* TODO coarse tuning with fourth-power FFT analysis */
@@ -140,22 +132,28 @@ main(int argc, char *argv[])
 				resync_offset -= resync_period;
 				resync_error = (cimag(late) - cimag(early)) * cimag(cur_sample);
 				resync_offset += (resync_error/100000*resync_period/100);
+
+				/* Fine frequency/phase tuning (beta) */
 				cur_sample = costas_resync(costas, cur_sample);
 
-				/* Fine frequency/phase tuning (wip)*/
 /*				printf("%f %f\n", creal(cur_sample), cimag(cur_sample));*/
 
-				/* TODO Write binary stream to file as soon as the PLL locks */
+				/* Write binary stream to file */
+				point[0] = clamp(creal(cur_sample)/2);
+				point[1] = clamp(cimag(cur_sample)/2);
+				fwrite(point, sizeof(*point), 2, out_fd);
+				bytecount += 2;
 			}
 		}
+		humanize(bytecount, humancount);
+		fprintf(stderr, "Writing to %s: %s          \r", out_fname, humancount);
 	}
+	fprintf(stderr, "\n");
 
 	/* Cleanup */
 	if (out_fd != stdout) {
 		fclose(out_fd);
 	}
-	filter_free(costas_lpf);
-	filter_free(costas_butt2);
 	interp->close(interp);
 	raw_samp->close(raw_samp);
 	return 0;

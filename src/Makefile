@@ -1,6 +1,7 @@
 SRC=$(wildcard *.c)
 OBJ=${SRC:.c=.o}
 
+CFLAGS += -I./include
 LDFLAGS += -lm 
 
 .PHONY: strip clean

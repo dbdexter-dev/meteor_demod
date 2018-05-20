@@ -20,8 +20,6 @@ Filter*       filter_new(unsigned fwd_count, unsigned back_count, ...);
 Filter*       filter_copy(const Filter *orig);
 
 Filter*       filter_rrc(unsigned taps, unsigned osf, float alpha);
-Filter*       filter_lowpass(unsigned order, float wc);
-Filter*       filter_butt2(float wd, float wn, float k);
 
 float complex filter_fwd(Filter *flt, float complex in);
 void          filter_free(Filter *flt);
