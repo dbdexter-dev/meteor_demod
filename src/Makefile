@@ -2,7 +2,7 @@ SRC=$(wildcard *.c)
 OBJ=${SRC:.c=.o}
 
 CFLAGS += -I./include
-LDFLAGS += -lm 
+LDFLAGS += -lm -lpthread
 
 .PHONY: strip clean
 
@@ -16,6 +16,9 @@ meteor_demod: ${OBJ}
 
 ui.o: ui.c
 	gcc -c -o $@ $<
+
+main.o: main.c include/options.h
+	gcc ${CFLAGS} -c -o $@ $<
 
 %.o: %.c
 	gcc ${CFLAGS} -c -o $@ $<
