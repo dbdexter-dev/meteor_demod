@@ -14,9 +14,6 @@ strip: meteor_demod
 meteor_demod: ${OBJ}
 	gcc ${LDFLAGS} -o $@ $^
 
-ui.o: ui.c
-	gcc -c -o $@ $<
-
 main.o: main.c include/options.h
 	gcc ${CFLAGS} -c -o $@ $<
 
@@ -24,4 +21,4 @@ main.o: main.c include/options.h
 	gcc ${CFLAGS} -c -o $@ $<
 
 clean:
-	rm -f ${OBJ} meteor_demod
+	rm -f ${OBJ}

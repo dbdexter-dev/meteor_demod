@@ -18,11 +18,11 @@
 #define FIR_ORDER 32
 
 #define COSTAS_DAMP 1/M_SQRT2
-#define COSTAS_BW 90
+#define COSTAS_BW 80
 #define COSTAS_INIT_FREQ -0.005
 
 #define AGC_WINSIZE 1024 * 8
-#define AGC_TARGET 160
+#define AGC_TARGET 180
 
 #define CHUNKSIZE 32768
 
@@ -108,12 +108,9 @@ main(int argc, char *argv[])
 	}
 	/*}}}*/
 
-	/* Splash screen-ish */
-	splash();
-
 	/* If no filename was specified and networking is off, generate a filename */
 	if (!out_fname && !net_enabled) {
-		fprintf(stderr, "Please specify a filename to output to, or -n for networking\n");
+		fprintf(stderr, "Please specify a filename to output to, or -n for networking\n\n");
 		usage(argv[0]);
 	}
 
@@ -132,6 +129,9 @@ main(int argc, char *argv[])
 	if (net_enabled) {
 		tcp_init(NULL, net_port);
 	}
+
+	/* Splash screen-ish */
+	splash();
 
 	/* Initialize the AGC */
 	agc = agc_init(AGC_TARGET, AGC_WINSIZE);
@@ -157,26 +157,27 @@ main(int argc, char *argv[])
 	bytes_out_count = 0;
 	while ((count = interp->read(interp, CHUNKSIZE))) {
 		for (i=0; i<count; i++) {
-			/* TODO coarse tuning with fourth-power FFT analysis */
-			/* Symbol resampling (seems to be working fine)*/
+			/* Symbol resampling */
 			late = cur;
 			cur = early;
 			early = agc_apply(agc, interp->data[i]);
 
 			resync_offset++;
 			if (resync_offset >= resync_period) {
-				/* The current sample is in the correct time slot, process it */
+				/* The current sample is in the correct time slot: process it */
+				/* Calculate the symbol timing error (early-late algorithm) */
 				resync_offset -= resync_period;
 				resync_error = (cimag(late) - cimag(early)) * cimag(cur);
 				resync_offset += (resync_error/10000*resync_period/100);
 
-				/* Fine frequency/phase tuning (beta) */
+				/* Fine frequency/phase tuning (working fine) */
 				cur = costas_resync(costas, cur);
 
+				/* Append the new samples to the output buffer */
 				out_buf[buf_offset++] = clamp(creal(cur)/2);
 				out_buf[buf_offset++] = clamp(cimag(cur)/2);
 
-				/* Write binary stream to file or to socket */
+				/* Write binary stream to file and/or to socket */
 				if (buf_offset >= QUEUE_CHUNKSIZE) {
 					if (out_fname) {
 						fwrite(out_buf, buf_offset, 1, out_fd);
@@ -186,6 +187,8 @@ main(int argc, char *argv[])
 					}
 					buf_offset = 0;
 				}
+
+				/* Print some stats about our progress */
 				bytes_out_count += 2;
 				humanize(bytes_out_count, humancount);
 				printf("(%.1f%%)      %s bytes written     PLL freq: %+.1f Hz          \r",
@@ -195,7 +198,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	/* Send the remaining bytes */
+	/* Write/send the remaining bytes */
 	if (out_fname) {
 		fwrite(out_buf, buf_offset, 1, out_fd);
 	}

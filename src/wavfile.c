@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +32,7 @@ open_samples_file(char *fname)
 		state = (WavState*)samp->_backend;
 		state->fd = fd;
 
-		fread(&_header, sizeof(struct wave_header), 1, state->fd);
+		assert(fread(&_header, sizeof(struct wave_header), 1, state->fd));
 
 		/* If any of these comparisons return non-zero, the file is
 		 * not a valid WAVE file: abort */
@@ -48,7 +49,7 @@ open_samples_file(char *fname)
 			state->bytes_read = 0;
 		}
 	} else {
-		fatal("Invalid .wav file specified\n");
+		fatal("Invalid .wav file specified");
 		/* Not reached */
 		return NULL;
     }
@@ -76,6 +77,7 @@ wav_read(Sample *self, size_t count)
 
 	self->count = count;
 
+	/* Convert samples (aka uint16_t) to complex numbers */
 	tmp = malloc(2*self->bps/8);
 	for (i=0; i<count; i++) {
 		if (fread(tmp, self->bps/8, 2, state->fd) > 0) {
@@ -92,6 +94,7 @@ wav_read(Sample *self, size_t count)
 	return i;
 }
 
+/* Return how for into the file we are */
 float
 wav_get_perc(Sample *self)
 {
@@ -99,6 +102,8 @@ wav_get_perc(Sample *self)
 	return (float)state->bytes_read/state->total_bytes*100;
 }
 
+/* Close the .wav file descriptor and free the memory associated with this
+ * Sample object */
 int
 wav_close(Sample *self)
 {

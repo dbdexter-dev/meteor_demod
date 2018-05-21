@@ -67,19 +67,36 @@ tcp_queue_send(char *data, int size)
 {
 	Queue *cur;
 
+	/* _queue has not been allocated, handle the case separately */
 	if (!_queue) {
+		pthread_mutex_lock(&_queue_tex);
+
 		_queue = safealloc(sizeof(*_queue));
 		_queue->next = NULL;
+		if (size < QUEUE_CHUNKSIZE) {
+			memset(_queue->data, '\0', QUEUE_CHUNKSIZE);
+		}
+		memcpy(_queue->data, data, MIN(size, QUEUE_CHUNKSIZE));
+		sem_post(&_queue_sem);
+		data += QUEUE_CHUNKSIZE;
+		size -= QUEUE_CHUNKSIZE;
+
+		pthread_mutex_unlock(&_queue_tex);
 	}
 
+	if (!size) {
+		return;
+	}
 	/* Get to the tail of the queue */
 	for (cur = _queue; cur->next != NULL; cur = cur->next)
-		;
+	;
 
+	/* Copy the data on the queue one chunk at a time */
 	pthread_mutex_lock(&_queue_tex);
 	while (size > 0) {
 		cur->next = safealloc(sizeof(*cur));
 		cur = cur->next;
+		cur->next = NULL;
 
 		if (size < QUEUE_CHUNKSIZE) {
 			memset(cur->data, '\0', QUEUE_CHUNKSIZE);
@@ -90,7 +107,6 @@ tcp_queue_send(char *data, int size)
 		data += QUEUE_CHUNKSIZE;
 		size -= QUEUE_CHUNKSIZE;
 	}
-	cur->next = NULL;
 	pthread_mutex_unlock(&_queue_tex);
 }
 
@@ -154,11 +170,17 @@ tcp_thread_listen(void *server_sock)
 				free(tmp);
 			}
 			pthread_mutex_unlock(&_queue_tex);
+
+			/* Gracefully close the TCP client socket */
+			shutdown(client_sock, SHUT_RDWR);
 			close(client_sock);
 		}
 	}
 
+	/* Gracefully close the TCP server socket */
+	shutdown((size_t)server_sock, SHUT_RDWR);
 	close((size_t)server_sock);
+
 	return NULL;
 }
 /*}}}*/

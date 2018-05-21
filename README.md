@@ -8,3 +8,9 @@ with the help of LRPTofflineDecoder or
 
 It now also supports sending the decoded symbols to a TCP client, such as the
 AMIGOS version of LRPTofflineDecoder.
+
+# Compling/installing
+
+As usual, type `make` to compile the package, `make install` to install the
+binary to /usr/bin/. A `debug` target is available if you want to keep the debug
+symbols in the executable.

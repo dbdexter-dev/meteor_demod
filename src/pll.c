@@ -10,7 +10,6 @@ static float costas_compute_delta(float i_branch, float q_branch);
 Costas*
 costas_init(float freq, float damping, float bw)
 {
-	float denom;
 	Costas *costas;
 
 	costas = safealloc(sizeof(*costas));
@@ -18,13 +17,13 @@ costas_init(float freq, float damping, float bw)
 	costas->nco_freq = freq;
 	costas->nco_phase = 0;
 
-	denom = (1.0 + 2.0*damping*bw + bw*bw);
-	costas->alpha = (4*damping*bw)/denom;
-	costas->beta = (4*bw*bw)/denom;
+	costas_recompute_coeffs(costas, damping, bw);
 
 	return costas;
 }
 
+/* Demodulate a sample with the reconstructed carrier, and update the carrier
+ * itself based on how far the sample is to the closest constellation point */
 float complex
 costas_resync(Costas *self, float complex samp)
 {
@@ -32,19 +31,22 @@ costas_resync(Costas *self, float complex samp)
 	float complex retval;
 	float error;
 
-	nco_out = cexp(I*self->nco_phase);
+	/* Convert the phase into the sine and cosine components of the LO */
+	nco_out = cexp(-I*self->nco_phase);
 
-	/* Mix with LO */
-	retval = samp * conj(nco_out);
+	/* Mix sample with LO */
+	retval = samp * nco_out;
 
-	/* Calculate the phase delta */
+	/* Calculate phase delta */
 	error = costas_compute_delta(creal(retval), cimag(retval))/255;
 	error = float_clamp(error, 1.0);
 
-	/* Apply the phase and frequency delta */
+	/* Apply phase and frequency corrections */
 	self->nco_phase = fmod(self->nco_phase + self->nco_freq + self->alpha*error, 2*M_PI);
 	self->nco_freq = float_clamp(self->nco_freq + self->beta*error, FREQ_MAX);
 
+	/* If the PLL goes all wonky, try to bring it back by wrapping the
+	 * frequency scale around */
 	if (self->nco_freq >= FREQ_MAX) {
 		self->nco_freq = -FREQ_MAX;
 	} else if (self->nco_freq <= -FREQ_MAX) {
@@ -54,11 +56,24 @@ costas_resync(Costas *self, float complex samp)
 	return retval;
 }
 
-
+/* Compute the alpha and beta coefficients of the Costas loop from damping and
+ * bandwidth, and update them in the Costas object */
 void
-costas_free(Costas *cst)
+costas_recompute_coeffs(Costas *self, float damping, float bw)
 {
-	free(cst);
+	float denom;
+
+	denom = (1.0 + 2.0*damping*bw + bw*bw);
+	self->alpha = (4*damping*bw)/denom;
+	self->beta = (4*bw*bw)/denom;
+}
+
+
+/* Free the memory associated with the Costas loop object */
+void
+costas_free(Costas *self)
+{
+	free(self);
 }
 
 /* Static functions {{{ */

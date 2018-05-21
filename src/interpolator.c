@@ -5,7 +5,7 @@
 #include "utils.h"
 
 static int interp_read(Sample *self, size_t count);
-static int interp_close(Sample *self);
+static int interp_free(Sample *self);
 
 typedef struct {
 	Sample *src;
@@ -27,7 +27,7 @@ interp_init(Sample* src, float alpha, unsigned order, unsigned factor)
 	interp->data = NULL;
 	interp->bps = sizeof(*src->data);
 	interp->read = interp_read;
-	interp->close = interp_close;
+	interp->close = interp_free;
 
 	interp->_backend = safealloc(sizeof(InterpState));
 	status = (InterpState*) interp->_backend;
@@ -40,7 +40,7 @@ interp_init(Sample* src, float alpha, unsigned order, unsigned factor)
 }
 
 /* Wrapper to interpolate the source data and provide a transparent translation
- * layer between the two blocks */
+ * layer between the raw samples and the interpolated samples */
 int
 interp_read(Sample *self, size_t count)
 {
@@ -57,8 +57,7 @@ interp_read(Sample *self, size_t count)
 	src = status->src;
 	rrc = status->rrc;
 
-	/* If there's some data from a previous interpolation, move it to the
-	 * beginning of the new data */
+	/* Prepare a buffer for the data that will go into the Sample struct */
 	if (!self->data) {
 		self->data = safealloc(sizeof(*self->data) * count);
 	} else if (self->count < count) {
@@ -72,10 +71,10 @@ interp_read(Sample *self, size_t count)
 	/* Read the true samples from the associated source */
 	true_samp_count = src->read(src, true_samp_count);
 	if (!true_samp_count) {
-		return 0;
+		return -1;
 	}
 
-	/* Feed through the filter */
+	/* Feed through the filter, with zero-order hold interpolation */
 	for (i=0; i<count; i++) {
 		self->data[i] = filter_fwd(rrc, src->data[i/factor]) / M_SQRT2;
 	}
@@ -83,8 +82,10 @@ interp_read(Sample *self, size_t count)
 	return count;
 }
 
+/* Free the memory related to the interpolator. Note that this function does not
+ * try to close the underlying data source (aka self->_backend->src) */
 int
-interp_close(Sample *self)
+interp_free(Sample *self)
 {
 	filter_free(((InterpState*)(self->_backend))->rrc);
 	free(self->_backend);

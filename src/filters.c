@@ -6,8 +6,9 @@
 float compute_rrc_coeff(int stage_no, unsigned n_taps, unsigned osf, float alpha);
 float compute_lpf_coeff(int stage_no, unsigned order, float wc, float alpha);
 
-/* Create a new filter, a FIR if back_count is 0. Variable length arguments
- * indicate the various coefficients to be used in the filter */
+/* Create a new filter, a FIR if back_count is 0, an IIR filter otherwise.
+ * Variable length arguments are two double ptrs, which indicate the
+ * coefficients to be used in the filter */
 Filter*
 filter_new(unsigned fwd_count, unsigned back_count, ...)
 {
@@ -17,22 +18,25 @@ filter_new(unsigned fwd_count, unsigned back_count, ...)
 	double *fwd_coeff;
 	double *back_coeff;
 
-	va_start(flt_parm, back_count);
 
 	flt = safealloc(sizeof(*flt));
 
 	flt->fwd_count = fwd_count;
 	flt->back_count = back_count;
 
+	va_start(flt_parm, back_count);
 	if (fwd_count) {
+		/* Initialize the filter memory nodes and forward coefficients */
 		fwd_coeff = va_arg(flt_parm, double*);
 		flt->fwd_coeff = safealloc(sizeof(*flt->fwd_coeff) * fwd_count);
 		flt->mem = safealloc(sizeof(*flt->mem) * fwd_count);
 		for (i=0; i<fwd_count; i++) {
+			flt->mem[i] = 0;
 			flt->fwd_coeff[i] = (float)fwd_coeff[i];
 		}
 
 		if (back_count) {
+			/* Initialize the feedback coefficients */
 			back_coeff = va_arg(flt_parm, double*);
 			flt->back_coeff = safealloc(sizeof(*flt->back_coeff) * back_count);
 			for (i=0; i<back_count; i++) {
@@ -40,20 +44,12 @@ filter_new(unsigned fwd_count, unsigned back_count, ...)
 			}
 		}
 	}
-
 	va_end(flt_parm);
-
-	for (i=0; i<fwd_count; i++) {
-		flt->mem[i] = 0;
-	}
-	for (i=0; i<back_count; i++) {
-		flt->mem[i] = 0;
-	}
 
 	return flt;
 }
 
-/* Dabisaclly a deep clone of the filter */
+/* Basically a deep clone of the filter */
 Filter*
 filter_copy(const Filter *orig)
 {
@@ -66,10 +62,9 @@ filter_copy(const Filter *orig)
 	ret->fwd_count = orig->fwd_count;
 
 	if(ret->fwd_count) {
-		/* Copy feed-forward parameters */
+		/* Copy feed-forward parameters and initialize the memory */
 		ret->fwd_coeff = safealloc(sizeof(*ret->fwd_coeff) * ret->fwd_count);
 		ret->mem = safealloc(sizeof(*ret->mem) * ret->fwd_count);
-		/* Copy the coefficients */
 		for (i=0; i<ret->fwd_count; i++) {
 			ret->mem[i] = 0;
 			ret->fwd_coeff[i] = orig->fwd_coeff[i];
@@ -77,7 +72,6 @@ filter_copy(const Filter *orig)
 		if (ret->back_count) {
 			/* Copy feedback parameters */
 			ret->back_coeff = safealloc(sizeof(*ret->back_coeff) * ret->back_count);
-			/* Copy the coefficients */
 			for (i=0; i<ret->back_count; i++) {
 				ret->back_coeff[i] = orig->back_coeff[i];
 			}
@@ -87,7 +81,7 @@ filter_copy(const Filter *orig)
 	return ret;
 }
 
-/* Root raised cosine filter */
+/* Create a RRC (root raised cosine) filter */
 Filter*
 filter_rrc(unsigned order, unsigned osf, float alpha)
 {
@@ -105,6 +99,7 @@ filter_rrc(unsigned order, unsigned osf, float alpha)
 
 	rrc = filter_new(taps, 0, coeffs);
 	free(coeffs);
+
 	return rrc;
 }
 
@@ -125,7 +120,7 @@ filter_fwd(Filter *self, float complex in)
 		self->mem[i] = self->mem[i-1];
 	}
 
-	/* Calculate the new mem[0] value */
+	/* Calculate the new mem[0] value through the feedback coefficients */
 	for (i=1; i<self->back_count; i++) {
 		in -= self->mem[i] * self->back_coeff[i];
 	}
@@ -140,6 +135,7 @@ filter_fwd(Filter *self, float complex in)
 	return out;
 }
 
+/* Free a filter object */
 void
 filter_free(Filter *self)
 {
@@ -154,15 +150,8 @@ filter_free(Filter *self)
 	free(self);
 }
 
-float
-filter_wn_prewarp(float wn_digital, unsigned samplerate)
-{
-	float sample_period = 1.0/samplerate;
-	return 2.0/sample_period*tan(wn_digital/sample_period);
-}
-
 /*Static functions {{{*/
-/* Variable alpha windowing */
+/* Variable alpha RRC filter coefficients */
 inline float
 compute_rrc_coeff(int stage_no, unsigned taps, unsigned osf, float alpha)
 {
@@ -183,5 +172,4 @@ compute_rrc_coeff(int stage_no, unsigned taps, unsigned osf, float alpha)
 	interm = M_PI*t*(1-(4*alpha*t)*(4*alpha*t));
 	return coeff / interm;
 }
-
 /*}}}*/

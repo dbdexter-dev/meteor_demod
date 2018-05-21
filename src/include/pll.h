@@ -17,4 +17,6 @@ Costas*       costas_init(float freq, float damping, float bw);
 float complex costas_resync(Costas *self, float complex samp);
 void          costas_free(Costas *self);
 
+void          costas_recompute_coeffs(Costas *self, float damping, float bw);
+
 #endif
