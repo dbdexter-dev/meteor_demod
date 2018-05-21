@@ -5,3 +5,6 @@ satellite. It currently supports reading from a I/Q recording in .wav format,
 and it outputs an 8-bit soft-QPSK file, from which you can generate an image
 with the help of LRPTofflineDecoder or
 [meteor\_decoder](https://github.com/artlav/meteor_decoder).
+
+It now also supports sending the decoded symbols to a TCP client, such as the
+AMIGOS version of LRPTofflineDecoder.
