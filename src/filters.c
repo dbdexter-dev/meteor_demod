@@ -1,7 +1,4 @@
 #include <stdarg.h>
-#ifdef __DEBUG
-#include <stdio.h>
-#endif
 #include <math.h>
 #include "filters.h"
 #include "utils.h"

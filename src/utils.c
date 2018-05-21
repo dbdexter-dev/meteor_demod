@@ -13,8 +13,15 @@ clamp(float x)
 {
 	if (x < -128.0) {
 		return -128;
-	} else if (x > 127.0) {
+	}
+	if (x > 127.0) {
 		return 127;
+	}
+	if (x > 0 && x < 1) {
+		return 1;
+	}
+	if (x > -1 && x < 0) {
+		return -1;
 	}
 	return x;
 }
@@ -90,11 +97,11 @@ humanize(size_t count, char *buf)
 void
 usage(char *pname)
 {
-	fprintf(stderr, "\nUsage: %s [options] file\n", pname);
+	fprintf(stderr, "Usage: %s [options] file\n", pname);
 	fprintf(stderr,
-			"   -b, --bandwidth <bw>   Set the PLL bandwidth to <bw> Hz (default: 20000 Hz)\n"
+			"   -b, --bandwidth <bw>   Set the PLL bandwidth to <bw> (default: 90)\n"
 			"   -o, --output           Output decoded symbols to <file> (default: LRPT_yyyy_mm_dd_HH_MM.s)\n"
-	        "   -r, --rate <rate>      Set the symbol rate to <rate> (default: 72000 sps)\n"
+	        "   -r, --rate <rate>      Set the symbol rate to <rate> (default: 72000)\n"
 	        "   -s, --oversamp <mult>  Set the interpolator oversampling factor to <mult> (default: 4)\n"
 	        "\n"
 	        "   -h, --help             Print this help screen\n"
@@ -107,7 +114,7 @@ usage(char *pname)
 void
 splash()
 {
-    fprintf(stderr, "\nMeteor-M2 LRPT demodulator v%s\n", VERSION);
+    fprintf(stderr, "\nMeteor-M2 LRPT demodulator v%s\n\n", VERSION);
 }
 
 

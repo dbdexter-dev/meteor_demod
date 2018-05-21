@@ -1,6 +1,3 @@
-#ifdef __DEBUG
-#include <stdio.h>
-#endif
 #include "agc.h"
 #include "utils.h"
 

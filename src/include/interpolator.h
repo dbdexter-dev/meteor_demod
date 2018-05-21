@@ -9,7 +9,5 @@
 #include "sample.h"
 
 Sample* interp_init(Sample *src, float alpha, unsigned order, unsigned factor);
-int interp_read(Sample *self, size_t count);
-int interp_close(Sample *self);
 
 #endif

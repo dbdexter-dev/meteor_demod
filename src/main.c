@@ -17,7 +17,7 @@
 #define FIR_ORDER 32
 
 #define COSTAS_DAMP 1/M_SQRT2
-#define COSTAS_BW 20000
+#define COSTAS_BW 90
 #define COSTAS_INIT_FREQ -0.005
 
 #define AGC_WINSIZE 1024 * 8
@@ -60,6 +60,11 @@ main(int argc, char *argv[])
 	out_fname_should_free = 0;
 	interp_factor = INTERP_FACTOR;
 
+	if (argc < 2) {
+		splash();
+		usage(argv[0]);
+	}
+
 	/* Parse command line args */
 	while ((c = getopt_long(argc, argv, SHORTOPTS, longopts, NULL)) != -1) {
 		switch (c) {
@@ -100,8 +105,6 @@ main(int argc, char *argv[])
 		out_fname_should_free = 1;
 	}
 
-
-
 	/* Open raw samples file */
 	raw_samp = open_samples_file(argv[optind]);
 	if (!raw_samp) {
@@ -120,7 +123,8 @@ main(int argc, char *argv[])
 	interp = interp_init(raw_samp, RRC_ALPHA, FIR_ORDER, interp_factor);
 
 	/* Initialize costas loop */
-	costas_bw = 2*M_PI*sqrt(costas_bw)/symbol_rate;
+	costas_bw = 2*M_PI*costas_bw/symbol_rate;
+	printf("costas bw: %f\n", costas_bw);
 	costas = costas_init(COSTAS_INIT_FREQ, COSTAS_DAMP, costas_bw);
 
 	/* Initialize the early-late timing variables */

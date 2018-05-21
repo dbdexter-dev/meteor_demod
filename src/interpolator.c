@@ -4,6 +4,9 @@
 #include "interpolator.h"
 #include "utils.h"
 
+static int interp_read(Sample *self, size_t count);
+static int interp_close(Sample *self);
+
 typedef struct {
 	Sample *src;
 	Filter *rrc;

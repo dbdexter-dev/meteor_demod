@@ -1,7 +1,4 @@
 #include <math.h>
-#ifdef __DEBUG
-#include <stdio.h>
-#endif
 #include "pll.h"
 #include "utils.h"
 
