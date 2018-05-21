@@ -22,7 +22,7 @@
 #define COSTAS_INIT_FREQ -0.005
 
 #define AGC_WINSIZE 1024 * 8
-#define AGC_TARGET 200
+#define AGC_TARGET 160
 
 #define CHUNKSIZE 32768
 
@@ -84,7 +84,10 @@ main(int argc, char *argv[])
 			break;
 		case 'n':
 			net_enabled = 1;
-			net_port = (optarg == NULL) ? 0 : atoi(optarg);
+			break;
+		case 'p':
+			net_enabled = 1;
+			net_port = atoi(optarg);
 			break;
 		case 'r':
 			symbol_rate = atoi(optarg);
@@ -110,8 +113,8 @@ main(int argc, char *argv[])
 
 	/* If no filename was specified and networking is off, generate a filename */
 	if (!out_fname && !net_enabled) {
-		out_fname = gen_fname();
-		out_fname_should_free = 1;
+		fprintf(stderr, "Please specify a filename to output to, or -n for networking\n");
+		usage(argv[0]);
 	}
 
 	/* Open raw samples file */
@@ -138,7 +141,6 @@ main(int argc, char *argv[])
 
 	/* Initialize costas loop */
 	costas_bw = 2*M_PI*costas_bw/symbol_rate;
-	printf("costas bw: %f\n", costas_bw);
 	costas = costas_init(COSTAS_INIT_FREQ, COSTAS_DAMP, costas_bw);
 
 	/* Initialize the early-late timing variables */

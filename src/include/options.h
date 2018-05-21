@@ -16,6 +16,7 @@ struct option longopts[] = {
 	{ "port",       1,  NULL, 'p' },
 	{ "rate",       1,  NULL, 'r' },
 	{ "oversamp",   1,  NULL, 's' },
+	{ "output",     1,  NULL, 'o' },
 	{ "version",    0,  NULL, 'v' },
 };
 
