@@ -101,6 +101,8 @@ usage(char *pname)
 	fprintf(stderr,
 			"   -b, --bandwidth <bw>   Set the PLL bandwidth to <bw> (default: 90)\n"
 			"   -o, --output           Output decoded symbols to <file> (default: LRPT_yyyy_mm_dd_HH_MM.s)\n"
+			"   -n, --net              Enable sending the decoded data to a TCP client\n"
+			"       --port <port>      Listen on port <port> (default: 2011)\n"
 	        "   -r, --rate <rate>      Set the symbol rate to <rate> (default: 72000)\n"
 	        "   -s, --oversamp <mult>  Set the interpolator oversampling factor to <mult> (default: 4)\n"
 	        "\n"

@@ -4,6 +4,9 @@
 #ifndef _METEOR_UTILS_H
 #define _METEOR_UTILS_H
 
+#define MAX(X, Y) (X > Y) ? X : Y
+#define MIN(X, Y) (X < Y) ? X : Y
+
 #include <complex.h>
 #include <stdlib.h>
 
