@@ -15,7 +15,7 @@
 #define FIR_ORDER 32
 
 #define COSTAS_DAMP 1/M_SQRT2
-#define COSTAS_BW 80
+#define COSTAS_BW 100
 #define COSTAS_INIT_FREQ -0.005
 
 #define AGC_WINSIZE 1024 * 8
@@ -31,7 +31,7 @@ main(int argc, char *argv[])
 	Demod *demod;
 
 	/* Command line changeable parameters {{{*/
-	int net_enabled, net_port;
+	int net_port;
 	int symbol_rate;
 	float costas_bw;
 	unsigned interp_factor;
@@ -70,7 +70,6 @@ main(int argc, char *argv[])
 			}
 			break;
 		case 'p':
-			net_enabled = 1;
 			net_port = atoi(optarg);
 			break;
 		case 'r':
@@ -93,7 +92,7 @@ main(int argc, char *argv[])
 	/*}}}*/
 
 	/* If no filename was specified and networking is off, generate a filename */
-	if (!out_fname && !net_enabled) {
+	if (!out_fname && net_port == -1) {
 		fprintf(stderr, "Please specify a filename to output to, or -n for networking\n\n");
 		usage(argv[0]);
 	}
@@ -112,8 +111,8 @@ main(int argc, char *argv[])
 
 	while (demod_status(demod)) {
 		sleep(1);
-		printf("(%.1f) PLL freq: %+.4f\n",
-		       demod_get_perc(demod), demod_get_freq(demod));
+		fprintf(stderr, "(%5.1f%%)   PLL freq: %+7.1f Hz\n",
+		        demod_get_perc(demod), demod_get_freq(demod));
 	}
 
 	demod_join(demod);

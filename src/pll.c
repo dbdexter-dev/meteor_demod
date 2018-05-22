@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <math.h>
 #include "pll.h"
 #include "utils.h"
@@ -19,6 +20,12 @@ costas_init(float freq, float damping, float bw)
 
 	costas_recompute_coeffs(costas, damping, bw);
 
+	costas->damping = damping;
+	costas->bw = bw;
+
+	costas->moving_avg = 1;
+	costas->locked = 0;
+
 	return costas;
 }
 
@@ -37,20 +44,24 @@ costas_resync(Costas *self, float complex samp)
 	/* Mix sample with LO */
 	retval = samp * nco_out;
 
-	/* Calculate phase delta */
-	error = costas_compute_delta(creal(retval), cimag(retval))/255;
+	/* Calculate phase delta and updothe the running average */
+	error = costas_compute_delta(creal(retval), cimag(retval))/255.0;
+	self->moving_avg = (self->moving_avg * 49999 + abs(error))/50000;
 	error = float_clamp(error, 1.0);
 
 	/* Apply phase and frequency corrections */
 	self->nco_phase = fmod(self->nco_phase + self->nco_freq + self->alpha*error, 2*M_PI);
 	self->nco_freq = float_clamp(self->nco_freq + self->beta*error, FREQ_MAX);
 
-	/* If the PLL goes all wonky, try to bring it back by wrapping the
-	 * frequency scale around */
-	if (self->nco_freq >= FREQ_MAX) {
-		self->nco_freq = -FREQ_MAX;
-	} else if (self->nco_freq <= -FREQ_MAX) {
-		self->nco_freq = FREQ_MAX;
+	/* Detect whether the PLL is locked, and decrease the BW if it is */
+	if (!self->locked && self->moving_avg < 0.011) {
+		fprintf(stderr, "PLL locked\n");
+		costas_recompute_coeffs(self, self->damping, self->bw/3);
+		self->locked = 1;
+	} else if (self->locked && self->moving_avg > 0.028) {
+		fprintf(stderr, "PLL unlocked\n");
+		costas_recompute_coeffs(self, self->damping, self->bw);
+		self->locked = 0;
 	}
 
 	return retval;
@@ -66,6 +77,7 @@ costas_recompute_coeffs(Costas *self, float damping, float bw)
 	denom = (1.0 + 2.0*damping*bw + bw*bw);
 	self->alpha = (4*damping*bw)/denom;
 	self->beta = (4*bw*bw)/denom;
+/*	fprintf(stderr, "Coefficients: %f %f\n", self->alpha, self->beta);*/
 }
 
 

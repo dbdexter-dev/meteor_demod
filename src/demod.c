@@ -160,7 +160,7 @@ demod_thr_run(void* x)
 				resync_error = (cimag(late) - cimag(early)) * cimag(cur);
 				resync_offset += (resync_error/10000*resync_period/100);
 
-				/* Fine frequency/phase tuning (working fine) */
+				/* Fine frequency/phase tuning */
 				cur = costas_resync(self->cst, cur);
 
 				/* Append the new samples to the output buffer */

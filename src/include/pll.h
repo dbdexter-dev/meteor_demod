@@ -11,6 +11,9 @@
 typedef struct {
 	float nco_phase, nco_freq;
 	float alpha, beta;
+	float damping, bw;
+	int locked;
+	float moving_avg;
 } Costas;
 
 Costas*       costas_init(float freq, float damping, float bw);
