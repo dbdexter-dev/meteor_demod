@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include "demod.h"
 #include "options.h"
+#include "tui.h"
 #include "utils.h"
 #include "wavfile.h"
 
@@ -89,13 +90,13 @@ main(int argc, char *argv[])
 	if (argc - optind < 1) {
 		usage(argv[0]);
 	}
-	/*}}}*/
 
 	/* If no filename was specified and networking is off, generate a filename */
 	if (!out_fname && net_port == -1) {
-		fprintf(stderr, "Please specify a filename to output to, or -n for networking\n\n");
+		fprintf(stderr, "Please specify a file to output to, or -n for networking\n\n");
 		usage(argv[0]);
 	}
+	/*}}}*/
 
 	/* Open raw samples file */
 	raw_samp = open_samples_file(argv[optind]);
@@ -103,29 +104,25 @@ main(int argc, char *argv[])
 		fatal("Couldn't open samples file");
 	}
 
-	/* Splash screen-ish */
-	splash();
+	tui_init();
+	tui_print_info("Will read from %s\n", argv[optind]);
 
 	demod = demod_init(raw_samp, interp_factor, costas_bw, symbol_rate);
 	demod_start(demod, net_port, out_fname);
+	tui_print_info("Demodulator initialized\n");
 
 	while (demod_status(demod)) {
-		sleep(1);
-		fprintf(stderr, "(%5.1f%%)   PLL freq: %+7.1f Hz\n",
-		        demod_get_perc(demod), demod_get_freq(demod));
+		tui_process_input();
+		tui_update_file_in(demod_get_perc(demod));
+		tui_update_data_out(demod_get_bytes(demod));
+		tui_update_pll(demod_get_freq(demod), demod_is_pll_locked(demod));
+		tui_draw_constellation(demod_get_buf(demod), 256);
 	}
 
 	demod_join(demod);
+	tui_deinit();
 
 	/* Print some stats about our progress */
-/*	bytes_out_count += 2;*/
-/*	humanize(bytes_out_count, humancount);*/
-/*	printf("(%.1f%%)      %s bytes written     PLL freq: %+.1f Hz \r",*/
-/*			wav_get_perc(raw_samp), humancount, costas->nco_freq*symbol_rate/(2*M_PI));*/
-	fflush(stdout);
-
-	fprintf(stderr, "\n");
-
 	return 0;
 }
 

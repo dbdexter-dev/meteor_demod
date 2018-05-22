@@ -71,9 +71,16 @@ demod_start(Demod *self, int net_port, char *fname)
 	pthread_create(&self->t, NULL, demod_thr_run, (void*)args);
 }
 
-int demod_status(Demod *self)
+int
+demod_status(Demod *self)
 {
 	return self->thr_is_running;
+}
+
+int
+demod_is_pll_locked(Demod *self)
+{
+	return self->cst->locked;
 }
 
 unsigned
@@ -100,6 +107,13 @@ demod_get_freq(Demod *self)
 	return self->cst->nco_freq*self->sym_rate/(2*M_PI);
 }
 
+/* XXX not thread-safe */
+char*
+demod_get_buf(Demod *self)
+{
+	return self->out_buf;
+}
+
 void
 demod_join(Demod *self)
 {
@@ -120,10 +134,11 @@ demod_thr_run(void* x)
 	int i, count, buf_offset;
 	float complex early, cur, late;
 	float resync_offset, resync_error, resync_period;
-	char out_buf[QUEUE_CHUNKSIZE];
+	char *out_buf;
 
 	const ThrArgs *args = (ThrArgs*)x;
 	Demod *self = args->self;
+	out_buf = self->out_buf;
 
 	self->thr_is_running = 1;
 

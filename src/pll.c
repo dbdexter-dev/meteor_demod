@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "pll.h"
+#include "tui.h"
 #include "utils.h"
 
 #define FREQ_MAX 1.0
@@ -55,11 +56,11 @@ costas_resync(Costas *self, float complex samp)
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
 	if (!self->locked && self->moving_avg < 0.011) {
-		fprintf(stderr, "PLL locked\n");
+		tui_print_info("PLL lock acquired\n");
 		costas_recompute_coeffs(self, self->damping, self->bw/3);
 		self->locked = 1;
 	} else if (self->locked && self->moving_avg > 0.028) {
-		fprintf(stderr, "PLL unlocked\n");
+		tui_print_info("PLL lock lost\n");
 		costas_recompute_coeffs(self, self->damping, self->bw);
 		self->locked = 0;
 	}
@@ -77,7 +78,6 @@ costas_recompute_coeffs(Costas *self, float damping, float bw)
 	denom = (1.0 + 2.0*damping*bw + bw*bw);
 	self->alpha = (4*damping*bw)/denom;
 	self->beta = (4*bw*bw)/denom;
-/*	fprintf(stderr, "Coefficients: %f %f\n", self->alpha, self->beta);*/
 }
 
 
