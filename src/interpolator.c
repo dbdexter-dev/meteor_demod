@@ -71,7 +71,7 @@ interp_read(Sample *self, size_t count)
 	/* Read the true samples from the associated source */
 	true_samp_count = src->read(src, true_samp_count);
 	if (!true_samp_count) {
-		return -1;
+		return 0;
 	}
 
 	/* Feed through the filter, with zero-order hold interpolation */
