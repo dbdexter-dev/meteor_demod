@@ -7,6 +7,8 @@
 #include "tui.h"
 #include "utils.h"
 
+static unsigned _upd_interval;
+
 enum {
 	PAIR_DEF = 1,
 	PAIR_GREEN_DEF = 2,
@@ -25,7 +27,7 @@ struct {
 } tui;
 
 void
-tui_init()
+tui_init(unsigned upd_interval)
 {
 	int rows, cols;
 	setlocale(LC_ALL, "");
@@ -42,6 +44,7 @@ tui_init()
 	init_pair(PAIR_GREEN_DEF, COLOR_GREEN, -1);
 
 	getmaxyx(stdscr, rows, cols);
+	_upd_interval = upd_interval;
 
 	windows_init(rows, cols);
 	print_banner(tui.banner_top);
@@ -62,30 +65,30 @@ tui_handle_resize()
 	refresh();
 	getmaxyx(stdscr, nr, nc);
 
-	iq_size = MIN(128, nr);
+	iq_size = MIN(CONSTELL_MAX, nr);
 	cur_row = 0;
 
 	wresize(tui.banner_top, 1, nc);
 	mvwin(tui.banner_top, 0, 0);
-	wresize(tui.iq, iq_size, iq_size);
-	mvwin(tui.iq, 1, 0);
-	wresize(tui.pll, iq_size/3, nc - iq_size);
-	mvwin(tui.pll, 1+cur_row, iq_size);
-	cur_row += iq_size/3;
-	wresize(tui.filein, iq_size/3, nc - iq_size);
-	mvwin(tui.filein, 1+cur_row, iq_size);
-	cur_row += iq_size/3;
-	wresize(tui.dataout, iq_size/3, nc - iq_size);
-	mvwin(tui.dataout, 1+cur_row, iq_size);
-	wresize(tui.infowin, nr - iq_size, nc);
-	mvwin(tui.infowin, iq_size, 0);
+	wresize(tui.iq, iq_size/2, iq_size);
+	mvwin(tui.iq, 2, 0);
+	wresize(tui.pll, iq_size/6, nc - iq_size);
+	mvwin(tui.pll, 2+cur_row, iq_size+2);
+	cur_row += iq_size/6;
+	wresize(tui.filein, iq_size/6, nc - iq_size);
+	mvwin(tui.filein, 2+cur_row, iq_size+2);
+	cur_row += iq_size/6;
+	wresize(tui.dataout, iq_size/6, nc - iq_size);
+	mvwin(tui.dataout, 2+cur_row, iq_size+2);
+	wresize(tui.infowin, MIN(nr - iq_size, 10), nc);
+	mvwin(tui.infowin, 2+iq_size/2+2, 0);
 
 	print_banner(tui.banner_top);
 	iq_draw_quadrants(tui.iq);
 	wrefresh(tui.iq);
 }
 
-void
+int
 tui_process_input()
 {
 	int ch;
@@ -95,10 +98,14 @@ tui_process_input()
 	case KEY_RESIZE:
 		tui_handle_resize();
 		break;
+	case 'q':
+		return 1;
+		break;
 	default:
 		break;
 	}
 	wrefresh(tui.infowin);
+	return 0;
 }
 
 void
@@ -159,10 +166,10 @@ tui_draw_constellation(char *dots, unsigned count)
 		prev = mvwinch(tui.iq, y+nr/2, x+nc/2);
 		switch(prev) {
 		case '.':
-			waddch(tui.iq, '*');
-			break;
-		case '*':
 			waddch(tui.iq, '+');
+			break;
+		case '+':
+			waddch(tui.iq, '#');
 			break;
 		default:
 			waddch(tui.iq, '.');
@@ -202,13 +209,22 @@ tui_update_data_out(unsigned nbytes)
 	wrefresh(tui.dataout);
 }
 
+int
+tui_wait_for_user_input()
+{
+	int ret;
+
+	wtimeout(tui.infowin, -1);
+	ret = wgetch(tui.infowin);
+	wtimeout(tui.infowin, _upd_interval);
+
+	return ret;
+}
+
 /* Cleanly deinit ncurses */
 void
 tui_deinit()
 {
-	tui_print_info("Decoding completed. Will close in 5 seconds...\n");
-	wrefresh(tui.infowin);
-	sleep(5);
 	endwin();
 }
 
@@ -227,7 +243,7 @@ windows_init(int rows, int cols)
 	int iq_size;
 	int cur_row;
 
-	iq_size = MIN(31, cols);
+	iq_size = MIN(CONSTELL_MAX, cols);
 	cur_row = 0;
 
 	tui.banner_top = newwin(1, cols, 0, 0);
@@ -237,10 +253,10 @@ windows_init(int rows, int cols)
 	tui.filein = newwin(iq_size/6, cols-iq_size-2, 2+cur_row, iq_size+2);
 	cur_row += iq_size/6;
 	tui.dataout = newwin(iq_size/6, cols-iq_size-2, 2+cur_row, iq_size+2);
-	tui.infowin = newwin(MIN(rows - iq_size, 10), cols, 2+iq_size/2+2, 0);
+	tui.infowin = newwin(MIN(rows - iq_size/2, 10), cols, 2+iq_size/2+2, 0);
 
 	scrollok(tui.infowin, TRUE);
-	wtimeout(tui.infowin, UPD_INTERVAL);
+	wtimeout(tui.infowin, _upd_interval);
 }
 
 void

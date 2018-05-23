@@ -17,7 +17,7 @@
 #define DEF_PORT 2011
 
 static void* tcp_thread_listen(void *server_sock);
-static int _running;
+static int _running = 0;
 static pthread_mutex_t _queue_tex;
 static sem_t _queue_sem;
 static Queue *_queue;
@@ -116,12 +116,14 @@ void
 tcp_deinit()
 {
 	void* ret;
-	_running = 0;
-	tui_print_info("Waiting for children to terminate...\n");
-	pthread_join(_t, &ret);
+	if (_running) {
+		_running = 0;
+		tui_print_info("Waiting for children to terminate...\n");
+		pthread_join(_t, &ret);
 
-	pthread_mutex_destroy(&_queue_tex);
-	sem_destroy(&_queue_sem);
+		pthread_mutex_destroy(&_queue_tex);
+		sem_destroy(&_queue_sem);
+	}
 }
 
 /* Static functions {{{*/

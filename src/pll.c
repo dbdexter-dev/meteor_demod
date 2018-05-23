@@ -5,13 +5,17 @@
 #include "utils.h"
 
 #define FREQ_MAX 1.0
+#define AVG_WINSIZE 40000
 
 static float costas_compute_delta(float i_branch, float q_branch);
+static float* _lut_tanh;
+inline float lut_tanh(float val);
 
 /* Initialize a Costas loop for carrier frequency/phase recovery */
 Costas*
 costas_init(float freq, float damping, float bw)
 {
+	int i;
 	Costas *costas;
 
 	costas = safealloc(sizeof(*costas));
@@ -26,6 +30,12 @@ costas_init(float freq, float damping, float bw)
 
 	costas->moving_avg = 1;
 	costas->locked = 0;
+
+	_lut_tanh = safealloc(sizeof(float) * 255);
+	for (i=0; i<255; i++) {
+		_lut_tanh[i] = tanh((i-128)/2);
+	}
+
 
 	return costas;
 }
@@ -47,7 +57,7 @@ costas_resync(Costas *self, float complex samp)
 
 	/* Calculate phase delta and updothe the running average */
 	error = costas_compute_delta(creal(retval), cimag(retval))/255.0;
-	self->moving_avg = (self->moving_avg * 49999 + abs(error))/50000;
+	self->moving_avg = (self->moving_avg * (AVG_WINSIZE-1) + abs(error))/AVG_WINSIZE;
 	error = float_clamp(error, 1.0);
 
 	/* Apply phase and frequency corrections */
@@ -55,11 +65,11 @@ costas_resync(Costas *self, float complex samp)
 	self->nco_freq = float_clamp(self->nco_freq + self->beta*error, FREQ_MAX);
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
-	if (!self->locked && self->moving_avg < 0.011) {
+	if (!self->locked && self->moving_avg < 0.015) {
 		tui_print_info("PLL lock acquired\n");
-		costas_recompute_coeffs(self, self->damping, self->bw/3);
+		costas_recompute_coeffs(self, self->damping, self->bw/2);
 		self->locked = 1;
-	} else if (self->locked && self->moving_avg > 0.028) {
+	} else if (self->locked && self->moving_avg > 0.035) {
 		tui_print_info("PLL lock lost\n");
 		costas_recompute_coeffs(self, self->damping, self->bw);
 		self->locked = 0;
@@ -86,6 +96,7 @@ void
 costas_free(Costas *self)
 {
 	free(self);
+	free(_lut_tanh);
 }
 
 /* Static functions {{{ */
@@ -94,8 +105,21 @@ float
 costas_compute_delta(float i_branch, float q_branch)
 {
 	float error;
-	error = q_branch * slice(i_branch) -
-	        i_branch * slice(q_branch);
+	error = q_branch * lut_tanh(i_branch) -
+	        i_branch * lut_tanh(q_branch);
 	return error;
+}
+
+float
+lut_tanh(float val)
+{
+	if (val > 127) {
+		return 1;
+	}
+	if (val < -128) {
+		return -1;
+	}
+
+	return _lut_tanh[(int)val+127];
 }
 /*}}}*/

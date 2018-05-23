@@ -12,18 +12,6 @@
 #define SYM_RATE 72000
 #define INTERP_FACTOR 4
 
-#define RRC_ALPHA 0.6
-#define FIR_ORDER 32
-
-#define COSTAS_DAMP 1/M_SQRT2
-#define COSTAS_BW 100
-#define COSTAS_INIT_FREQ -0.005
-
-#define AGC_WINSIZE 1024 * 8
-#define AGC_TARGET 180
-
-#define CHUNKSIZE 32768
-
 int
 main(int argc, char *argv[])
 {
@@ -34,6 +22,8 @@ main(int argc, char *argv[])
 	/* Command line changeable parameters {{{*/
 	int net_port;
 	int symbol_rate;
+	int wait_on_exit;
+	int upd_interval;
 	float costas_bw;
 	unsigned interp_factor;
 	char *out_fname;
@@ -42,6 +32,8 @@ main(int argc, char *argv[])
 
 	/* Initialize the parameters that can be overridden with command-line args */
 	optind = 0;
+	wait_on_exit = 0;
+	upd_interval = UPD_INTERVAL;
 	net_port = -1;
 	symbol_rate = SYM_RATE;
 	costas_bw = COSTAS_BW;
@@ -62,13 +54,13 @@ main(int argc, char *argv[])
 		case 'h':
 			usage(argv[0]);
 			break;
-		case 'o':
-			out_fname = optarg;
-			break;
 		case 'n':
 			if (net_port < 0) {
 				net_port = 0;
 			}
+			break;
+		case 'o':
+			out_fname = optarg;
 			break;
 		case 'p':
 			net_port = atoi(optarg);
@@ -76,11 +68,17 @@ main(int argc, char *argv[])
 		case 'r':
 			symbol_rate = atoi(optarg);
 			break;
+		case 'R':
+			upd_interval = atoi(optarg);
+			break;
 		case 's':
 			interp_factor = atoi(optarg);
 			break;
 		case 'v':
 			version();
+			break;
+		case 'w':
+			wait_on_exit = 1;
 			break;
 		default:
 			usage(argv[0]);
@@ -104,7 +102,7 @@ main(int argc, char *argv[])
 		fatal("Couldn't open samples file");
 	}
 
-	tui_init();
+	tui_init(upd_interval);
 	tui_print_info("Will read from %s\n", argv[optind]);
 
 	demod = demod_init(raw_samp, interp_factor, costas_bw, symbol_rate);
@@ -112,11 +110,18 @@ main(int argc, char *argv[])
 	tui_print_info("Demodulator initialized\n");
 
 	while (demod_status(demod)) {
-		tui_process_input();
+		if (tui_process_input()) {
+			break;
+		}
 		tui_update_file_in(demod_get_perc(demod));
 		tui_update_data_out(demod_get_bytes(demod));
 		tui_update_pll(demod_get_freq(demod), demod_is_pll_locked(demod));
 		tui_draw_constellation(demod_get_buf(demod), 256);
+	}
+
+	if (wait_on_exit) {
+		tui_print_info("Decoding completed, press any key to exit...\n");
+		tui_wait_for_user_input();
 	}
 
 	demod_join(demod);
