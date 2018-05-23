@@ -4,7 +4,6 @@
 #include <pthread.h>
 #include "agc.h"
 #include "pll.h"
-#include "tcp.h"
 #include "sample.h"
 
 #define COSTAS_BW 100
@@ -17,6 +16,9 @@
 #define RRC_ALPHA 0.6
 #define RRC_FIR_ORDER 32
 
+#define CHUNKSIZE 32768
+#define SYM_CHUNKSIZE 1024
+
 typedef struct {
 	Agc *agc;
 	Sample *interp, *src;
@@ -28,11 +30,11 @@ typedef struct {
 	pthread_mutex_t mutex;
 	unsigned bytes_out_count;
 	int thr_is_running;
-	char out_buf[QUEUE_CHUNKSIZE];
+	char out_buf[SYM_CHUNKSIZE];
 } Demod;
 
 Demod*   demod_init(Sample *src, unsigned interp_factor, float pll_bw, unsigned sym_rate);
-void     demod_start(Demod *self, int net_port, char *fname);
+void     demod_start(Demod *self, char *fname);
 void     demod_join(Demod *self);
 
 int      demod_status(Demod *self);

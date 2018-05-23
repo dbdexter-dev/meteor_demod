@@ -187,9 +187,9 @@ tui_update_file_in(float perc)
 
 	wmove(tui.filein, 0, 0);
 	wattrset(tui.filein, A_BOLD);
-	wprintw(tui.filein, "Input file\n");
+	wprintw(tui.filein, "Data in\n");
 	wattroff(tui.filein, A_BOLD);
-	wprintw(tui.filein, "%.1f%% in", perc);
+	wprintw(tui.filein, "%.1f%%", perc);
 
 	wrefresh(tui.filein);
 }

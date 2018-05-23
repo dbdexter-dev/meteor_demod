@@ -5,16 +5,11 @@
 #include <pthread.h>
 #include "demod.h"
 #include "interpolator.h"
-#include "tcp.h"
 #include "utils.h"
 #include "wavfile.h"
 
-
-#define CHUNKSIZE 32768
-
 typedef struct {
 	Demod *self;
-	int net_port;
 	char *out_fname;
 } ThrArgs;
 
@@ -52,13 +47,12 @@ demod_init(Sample *src, unsigned interp_mult, float pll_bw, unsigned sym_rate)
 }
 
 void
-demod_start(Demod *self, int net_port, char *fname)
+demod_start(Demod *self, char *fname)
 {
 	ThrArgs *args;
 
 	args = safealloc(sizeof(*args));
 
-	args->net_port = net_port;
 	args->out_fname = fname;
 	args->self = self;
 
@@ -116,7 +110,6 @@ demod_join(Demod *self)
 	self->thr_is_running = 0;
 	pthread_join(self->t, &retval);
 
-	tcp_deinit();
 	agc_free(self->agc);
 	costas_free(self->cst);
 	self->interp->close(self->interp);
@@ -143,9 +136,6 @@ demod_thr_run(void* x)
 
 	resync_period = self->sym_period;
 
-	if (args->net_port >= 0) {
-		tcp_init(NULL, args->net_port);
-	}
 	if (args->out_fname) {
 		if (!(out_fd = fopen(args->out_fname, "w"))) {
 			fatal("Could not open file for writing");
@@ -182,13 +172,8 @@ demod_thr_run(void* x)
 				out_buf[buf_offset++] = clamp(cimag(cur)/2);
 
 				/* Write binary stream to file and/or to socket */
-				if (buf_offset >= QUEUE_CHUNKSIZE) {
-					if (args->out_fname) {
-						fwrite(out_buf, buf_offset, 1, out_fd);
-					}
-					if (args->net_port >= 0) {
-						tcp_queue_send(out_buf, buf_offset);
-					}
+				if (buf_offset >= SYM_CHUNKSIZE) {
+					fwrite(out_buf, buf_offset, 1, out_fd);
 					buf_offset = 0;
 				}
 				pthread_mutex_lock(&self->mutex);
@@ -198,14 +183,9 @@ demod_thr_run(void* x)
 		}
 	}
 
-	/* Write/send the remaining bytes */
-	if (args->out_fname) {
-		fwrite(out_buf, buf_offset, 1, out_fd);
-		fclose(out_fd);
-	}
-	if (args->net_port >= 0) {
-		tcp_queue_send(out_buf, buf_offset);
-	}
+	/* Write the remaining bytes */
+	fwrite(out_buf, buf_offset, 1, out_fd);
+	fclose(out_fd);
 
 	free(x);
 	self->thr_is_running = 0;

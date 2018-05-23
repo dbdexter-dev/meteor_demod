@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "utils.h"
 
 /* Clamp a real value to a signed char */
@@ -76,12 +77,11 @@ humanize(size_t count, char *buf)
 void
 usage(char *pname)
 {
-	fprintf(stderr, "Usage: %s [options] file\n", pname);
+	splash();
+	fprintf(stderr, "Usage: %s [options] file_in\n", pname);
 	fprintf(stderr,
 			"   -o, --output <file>     Output decoded symbols to <file>\n"
-			"   -n, --net               Enable sending the decoded data to a TCP client\n"
-			"       --port <port>       Listen on port <port> (default: 2011)\n"
-			"   -b, --bandwidth <bw>    Set the PLL bandwidth to <bw> (default: 90)\n"
+			"   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 90)\n"
 	        "   -r, --rate <rate>       Set the symbol rate to <rate> (default: 72000)\n"
 	        "   -s, --oversamp <mult>   Set the interpolator oversampling factor to <mult> (default: 4)\n"
 	        "   -w, --wait              Wait for user input before closing\n"
@@ -91,6 +91,22 @@ usage(char *pname)
 	        "   -v, --version           Print version info\n"
 	        );
 	exit(0);
+}
+
+char*
+gen_fname()
+{
+	char *ret;
+	time_t t;
+	struct tm* tm;
+
+	t = time(NULL);
+	tm = localtime(&t);
+
+	ret = safealloc(sizeof("LRPT_YYYY_MM_DD_HH_MM.s"));
+	strftime(ret, sizeof("LRPT_YYYY_MM_DD_HH_MM.s"), "LRPT_%Y_%m_%d-%H_%M.s", tm);
+
+	return ret;
 }
 
 /* Startup banner */
