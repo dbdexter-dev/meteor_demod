@@ -78,15 +78,17 @@ usage(char *pname)
 {
 	fprintf(stderr, "Usage: %s [options] file\n", pname);
 	fprintf(stderr,
-			"   -b, --bandwidth <bw>   Set the PLL bandwidth to <bw> (default: 90)\n"
-	        "   -r, --rate <rate>      Set the symbol rate to <rate> (default: 72000)\n"
-	        "   -s, --oversamp <mult>  Set the interpolator oversampling factor to <mult> (default: 4)\n"
-			"   -o, --output <file>    Output decoded symbols to <file>\n"
-			"   -n, --net              Enable sending the decoded data to a TCP client\n"
-			"       --port <port>      Listen on port <port> (default: 2011)\n"
+			"   -o, --output <file>     Output decoded symbols to <file>\n"
+			"   -n, --net               Enable sending the decoded data to a TCP client\n"
+			"       --port <port>       Listen on port <port> (default: 2011)\n"
+			"   -b, --bandwidth <bw>    Set the PLL bandwidth to <bw> (default: 90)\n"
+	        "   -r, --rate <rate>       Set the symbol rate to <rate> (default: 72000)\n"
+	        "   -s, --oversamp <mult>   Set the interpolator oversampling factor to <mult> (default: 4)\n"
+	        "   -w, --wait              Wait for user input before closing\n"
+	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50)\n"
 	        "\n"
-	        "   -h, --help             Print this help screen\n"
-	        "   -v, --version          Print version info\n"
+	        "   -h, --help              Print this help screen\n"
+	        "   -v, --version           Print version info\n"
 	        );
 	exit(0);
 }

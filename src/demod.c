@@ -9,12 +9,6 @@
 #include "utils.h"
 #include "wavfile.h"
 
-#define AGC_WINSIZE 1024*32
-#define AGC_TARGET 180
-#define RRC_ALPHA 0.6
-#define FIR_ORDER 32
-#define COSTAS_DAMP 1/M_SQRT2
-#define COSTAS_INIT_FREQ -0.0005
 
 #define CHUNKSIZE 32768
 
@@ -39,9 +33,9 @@ demod_init(Sample *src, unsigned interp_mult, float pll_bw, unsigned sym_rate)
 	ret->agc = agc_init(AGC_TARGET, AGC_WINSIZE);
 
 	/* Initialize the interpolator, associating raw_samp to it */
-	ret->interp = interp_init(src, RRC_ALPHA, FIR_ORDER, interp_mult);
+	ret->interp = interp_init(src, RRC_ALPHA, RRC_FIR_ORDER, interp_mult);
 	/* Discard the first null samples */
-	ret->interp->read(ret->interp, FIR_ORDER*interp_mult);
+	ret->interp->read(ret->interp, RRC_FIR_ORDER*interp_mult);
 
 	/* Initialize costas loop */
 	pll_bw = 2*M_PI*pll_bw/sym_rate;
@@ -71,9 +65,16 @@ demod_start(Demod *self, int net_port, char *fname)
 	pthread_create(&self->t, NULL, demod_thr_run, (void*)args);
 }
 
-int demod_status(Demod *self)
+int
+demod_status(Demod *self)
 {
 	return self->thr_is_running;
+}
+
+int
+demod_is_pll_locked(Demod *self)
+{
+	return self->cst->locked;
 }
 
 unsigned
@@ -100,16 +101,28 @@ demod_get_freq(Demod *self)
 	return self->cst->nco_freq*self->sym_rate/(2*M_PI);
 }
 
+/* XXX not thread-safe */
+char*
+demod_get_buf(Demod *self)
+{
+	return self->out_buf;
+}
+
 void
 demod_join(Demod *self)
 {
 	void* retval;
 
+	self->thr_is_running = 0;
+	pthread_join(self->t, &retval);
+
+	tcp_deinit();
 	agc_free(self->agc);
 	costas_free(self->cst);
 	self->interp->close(self->interp);
 
-	pthread_join(self->t, &retval);
+	free(self);
+
 }
 
 /* Static functions {{{ */
@@ -120,10 +133,11 @@ demod_thr_run(void* x)
 	int i, count, buf_offset;
 	float complex early, cur, late;
 	float resync_offset, resync_error, resync_period;
-	char out_buf[QUEUE_CHUNKSIZE];
+	char *out_buf;
 
 	const ThrArgs *args = (ThrArgs*)x;
 	Demod *self = args->self;
+	out_buf = self->out_buf;
 
 	self->thr_is_running = 1;
 
@@ -145,7 +159,7 @@ demod_thr_run(void* x)
 	resync_offset = 0;
 	early = 0;
 	cur = 0;
-	while ((count = self->interp->read(self->interp, CHUNKSIZE))) {
+	while (self->thr_is_running && (count = self->interp->read(self->interp, CHUNKSIZE))) {
 		for (i=0; i<count; i++) {
 			/* Symbol resampling */
 			late = cur;
@@ -191,9 +205,9 @@ demod_thr_run(void* x)
 	}
 	if (args->net_port >= 0) {
 		tcp_queue_send(out_buf, buf_offset);
-		tcp_deinit();
 	}
 
+	free(x);
 	self->thr_is_running = 0;
 	return NULL;
 }

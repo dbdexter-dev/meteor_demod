@@ -11,12 +11,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "tcp.h"
+#include "tui.h"
 #include "utils.h"
 
 #define DEF_PORT 2011
 
 static void* tcp_thread_listen(void *server_sock);
-static int _running;
+static int _running = 0;
 static pthread_mutex_t _queue_tex;
 static sem_t _queue_sem;
 static Queue *_queue;
@@ -50,7 +51,7 @@ tcp_init(char *ip, short port)
 	err = bind(server_sock, (struct sockaddr*)&server, sizeof(server));
 	assert(err == 0);
 
-	fprintf(stderr, "Server listening on port %d\n", port);
+	tui_print_info("Server listening on port %d\n", port);
 	_running = 1;
 
 	pthread_mutex_init(&_queue_tex, NULL);
@@ -115,12 +116,14 @@ void
 tcp_deinit()
 {
 	void* ret;
-	_running = 0;
-	fprintf(stderr, "Waiting for children to terminate...\n");
-	pthread_join(_t, &ret);
+	if (_running) {
+		_running = 0;
+		tui_print_info("Waiting for children to terminate...\n");
+		pthread_join(_t, &ret);
 
-	pthread_mutex_destroy(&_queue_tex);
-	sem_destroy(&_queue_sem);
+		pthread_mutex_destroy(&_queue_tex);
+		sem_destroy(&_queue_sem);
+	}
 }
 
 /* Static functions {{{*/
@@ -138,7 +141,7 @@ tcp_thread_listen(void *server_sock)
 	while (_running) {
 		listen((size_t)server_sock, 1);
 		client_sock = accept((size_t)server_sock, (struct sockaddr*)&client, &client_len);
-		printf("\n\nAccepted client connection, fd = %d\n", client_sock);
+		tui_print_info("Accepted client connection, fd = %d\n", client_sock);
 
 		/* Server-client communication */
 		while (_running) {
@@ -146,7 +149,7 @@ tcp_thread_listen(void *server_sock)
 			pthread_mutex_lock(&_queue_tex);
 
 			if (send(client_sock, _queue->data, QUEUE_CHUNKSIZE, MSG_NOSIGNAL) == -1) {
-				fprintf(stderr, "Lost connection to client %d\n", client_sock);
+				tui_print_info("Lost connection to client, fd = %d\n", client_sock);
 				pthread_mutex_unlock(&_queue_tex);
 				break;
 			}

@@ -1,6 +1,6 @@
-VERSION=\"0.1a\"
+VERSION=\"0.1b\"
 
-export CFLAGS = -pipe -O2 -march=native -Wall -std=c99 -pedantic -D_XOPEN_SOURCE=700 -DVERSION=${VERSION}
+export CFLAGS = -pipe -march=native -Wall -std=c99 -pedantic -D_XOPEN_SOURCE=700 -DVERSION=${VERSION}
 export LDFLAGS =
 PREFIX=/usr
 
@@ -10,6 +10,7 @@ default: release
 
 debug: CFLAGS+= -g -D__DEBUG
 debug: src
+release: CFLAGS+= -O2
 release: src
 
 src:
