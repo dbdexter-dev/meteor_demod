@@ -8,8 +8,8 @@
 
 typedef struct {
 	FILE *fd;
-	size_t total_bytes;
-	size_t bytes_read;
+	size_t total_samples;
+	size_t samples_read;
 } WavState;
 
 static int wav_read(Sample *samp, size_t count);
@@ -42,11 +42,11 @@ open_samples_file(char *fname)
 			samp->count = 0;
 			samp->samplerate = _header.sample_rate;
 			samp->data = NULL;
-			samp->bps = _header.bits_per_sample;
+			samp->bps = _header.bits_per_sample/8;
 			samp->read = wav_read;
 			samp->close = wav_close;
-			state->total_bytes = _header.subchunk2_size;
-			state->bytes_read = 0;
+			state->total_samples = _header.subchunk2_size / _header.num_channels / samp->bps;
+			state->samples_read = 0;
 		}
 	} else {
 		fatal("Invalid .wav file specified");
@@ -78,9 +78,9 @@ wav_read(Sample *self, size_t count)
 	self->count = count;
 
 	/* Convert samples (aka uint16_t) to complex numbers */
-	tmp = malloc(2*self->bps/8);
+	tmp = malloc(2*self->bps);
 	for (i=0; i<count; i++) {
-		if (fread(tmp, self->bps/8, 2, state->fd) > 0) {
+		if (fread(tmp, self->bps, 2, state->fd) > 0) {
 			self->data[i] = tmp[0] + tmp[1] * I;
 		} else {
 			break;
@@ -89,7 +89,7 @@ wav_read(Sample *self, size_t count)
 	free(tmp);
 
 	/* Update the byte count */
-	state->bytes_read += i*self->bps/8*2;
+	state->samples_read += i;
 
 	return i;
 }
@@ -99,7 +99,14 @@ float
 wav_get_perc(Sample *self)
 {
 	const WavState* state = self->_backend;
-	return (float)state->bytes_read/state->total_bytes*100;
+	return (float)state->samples_read/state->total_samples*100;
+}
+
+unsigned
+wav_get_size(Sample *self)
+{
+	const WavState* state = self->_backend;
+	return state->total_samples;
 }
 
 /* Close the .wav file descriptor and free the memory associated with this

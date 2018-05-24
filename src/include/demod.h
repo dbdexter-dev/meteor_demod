@@ -6,7 +6,7 @@
 #include "pll.h"
 #include "sample.h"
 
-#define COSTAS_BW 100
+#define COSTAS_BW 90
 #define COSTAS_DAMP 1/M_SQRT2
 #define COSTAS_INIT_FREQ -0.005
 

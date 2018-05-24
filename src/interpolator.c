@@ -15,7 +15,7 @@ typedef struct {
 
 /* Initialize the interpolator, which will use a RRC filter at its core */
 Sample*
-interp_init(Sample* src, float alpha, unsigned order, unsigned factor)
+interp_init(Sample* src, float alpha, unsigned order, unsigned factor, int sym_rate)
 {
 	Sample *interp;
 	InterpState *status;
@@ -34,7 +34,7 @@ interp_init(Sample* src, float alpha, unsigned order, unsigned factor)
 
 	status->factor = factor;
 	status->src = src;
-	status->rrc = filter_rrc(order, factor, alpha);
+	status->rrc = filter_rrc(order, factor, src->samplerate/(float)sym_rate, alpha);
 
 	return interp;
 }

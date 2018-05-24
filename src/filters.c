@@ -3,8 +3,7 @@
 #include "filters.h"
 #include "utils.h"
 
-float compute_rrc_coeff(int stage_no, unsigned n_taps, unsigned osf, float alpha);
-float compute_lpf_coeff(int stage_no, unsigned order, float wc, float alpha);
+float compute_rrc_coeff(int stage_no, unsigned n_taps, float osf, float alpha);
 
 /* Create a new filter, a FIR if back_count is 0, an IIR filter otherwise.
  * Variable length arguments are two double ptrs, which indicate the
@@ -83,18 +82,18 @@ filter_copy(const Filter *orig)
 
 /* Create a RRC (root raised cosine) filter */
 Filter*
-filter_rrc(unsigned order, unsigned osf, float alpha)
+filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 {
 	int i;
 	unsigned taps;
 	double *coeffs;
 	Filter *rrc;
 
-	taps = order*osf+1;
+	taps = order*factor+1;
 
 	coeffs = safealloc(sizeof(*coeffs) * taps);
 	for (i=0; i<taps; i++) {
-		coeffs[i] = compute_rrc_coeff(i, taps, osf, alpha);
+		coeffs[i] = compute_rrc_coeff(i, taps, factor*osf, alpha);
 	}
 
 	rrc = filter_new(taps, 0, coeffs);
@@ -152,8 +151,9 @@ filter_free(Filter *self)
 
 /*Static functions {{{*/
 /* Variable alpha RRC filter coefficients */
+/* Taken from https://www.michael-joost.de/rrcfilter.pdf */
 inline float
-compute_rrc_coeff(int stage_no, unsigned taps, unsigned osf, float alpha)
+compute_rrc_coeff(int stage_no, unsigned taps, float osf, float alpha)
 {
 	float coeff;
 	float t;
@@ -162,7 +162,7 @@ compute_rrc_coeff(int stage_no, unsigned taps, unsigned osf, float alpha)
 
 	order = (taps-1)/2;
 
-	t = abs((order - stage_no))/(float)osf;
+	t = abs(order - stage_no)/(float)osf;
 
 	if (t==0) {
 		return sqrt(M_SQRT2);

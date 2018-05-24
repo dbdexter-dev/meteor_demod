@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <locale.h>
+#include <math.h>
 #include <ncurses.h>
 #include <stdarg.h>
 #include <time.h>
@@ -19,6 +20,7 @@ static void print_banner(WINDOW *win);
 static void iq_draw_quadrants(WINDOW *win);
 static void windows_init(int rows, int col);
 
+/* Struct holding all the windows */
 struct {
 	WINDOW *banner_top;
 	WINDOW *iq;
@@ -26,6 +28,7 @@ struct {
 	WINDOW *infowin;
 } tui;
 
+/* Initialize the ncurses tui */
 void
 tui_init(unsigned upd_interval)
 {
@@ -52,6 +55,7 @@ tui_init(unsigned upd_interval)
 	iq_draw_quadrants(tui.iq);
 }
 
+/* Handle terminal resizing by moving the windows around */
 void
 tui_handle_resize()
 {
@@ -88,6 +92,9 @@ tui_handle_resize()
 	wrefresh(tui.iq);
 }
 
+/* Get user input, return 1 if an abort was requested, 0 otherwise. This also
+ * doubles as a throttling for the refresh rate, since wgetch() blocks for
+ * UPD_INTERVAL milliseconds before returning if no key is pressed */
 int
 tui_process_input()
 {
@@ -108,6 +115,7 @@ tui_process_input()
 	return 0;
 }
 
+/* Print a log message to the info window */
 int
 tui_print_info(const char *msg, ...)
 {
@@ -122,6 +130,7 @@ tui_print_info(const char *msg, ...)
 	tm = localtime(&t);
 	strftime(timestr, sizeof(timestr), "%T", tm);
 	wprintw(tui.infowin, "(%s) ", timestr);
+
 	va_start(ap, msg);
 	vwprintw(tui.infowin, msg, ap);
 	va_end(ap);
@@ -129,9 +138,12 @@ tui_print_info(const char *msg, ...)
 	return 0;
 }
 
+/* Update the PLL info displayed */
 void
 tui_update_pll(float freq, int islocked)
 {
+	assert(tui.pll);
+
 	werase(tui.pll);
 	wmove(tui.pll, 0, 0);
 	wattrset(tui.pll, A_BOLD);
@@ -150,6 +162,9 @@ tui_update_pll(float freq, int islocked)
 	wrefresh(tui.pll);
 }
 
+/* Draw an indicative constellation plot, not an accurate one, but still
+ * indicative of the signal quality (*dots should be mutexed for this to be
+ * accurate, since it comes directly from the decoding thread's memory domain) */
 void
 tui_draw_constellation(char *dots, unsigned count)
 {
@@ -158,12 +173,14 @@ tui_draw_constellation(char *dots, unsigned count)
 	unsigned i;
 	int prev;
 
+	assert(tui.iq);
+
 	getmaxyx(tui.iq, nr, nc);
 
 	werase(tui.iq);
 	for (i=0; i<count; i++) {
-		x = dots[i++]*nc/255;
-		y = dots[i]*nr/255;
+		x = round(dots[i++]*nc/255);
+		y = round(dots[i]*nr/255);
 
 		prev = mvwinch(tui.iq, y+nr/2, x+nc/2);
 		switch(prev) {
@@ -183,15 +200,26 @@ tui_draw_constellation(char *dots, unsigned count)
 
 /* Update the input file info */
 void
-tui_update_file_in(float perc)
+tui_update_file_in(unsigned size, unsigned samplerate, float perc)
 {
+	unsigned duration;
+	char total_duration[sizeof("HH:MM:SS")];
+	char done_duration[sizeof("HH:MM:SS")];
+
+	assert(tui.filein);
+
+	duration = size/samplerate;
+
+	seconds_to_str(duration, total_duration);
+	seconds_to_str(duration*perc/100, done_duration);
+
 	werase(tui.filein);
 
 	wmove(tui.filein, 0, 0);
 	wattrset(tui.filein, A_BOLD);
 	wprintw(tui.filein, "Data in\n");
 	wattroff(tui.filein, A_BOLD);
-	wprintw(tui.filein, "%.1f%%", perc);
+	wprintw(tui.filein, "%s/%s (%.1f%%)", done_duration, total_duration, perc);
 
 	wrefresh(tui.filein);
 }
@@ -203,6 +231,8 @@ tui_update_data_out(unsigned nbytes)
 	char humansize[8];
 	humanize(nbytes, humansize);
 
+	assert(tui.dataout);
+
 	werase(tui.dataout);
 	wattrset(tui.dataout, A_BOLD);
 	mvwprintw(tui.dataout, 0, 0, "Data out\n");
@@ -211,6 +241,7 @@ tui_update_data_out(unsigned nbytes)
 	wrefresh(tui.dataout);
 }
 
+/* Wait indefinitely for user input */
 int
 tui_wait_for_user_input()
 {
@@ -232,6 +263,7 @@ tui_deinit()
 
 
 /* Static functions {{{ */
+/* Print the top banner */
 void
 print_banner(WINDOW *win)
 {
@@ -239,6 +271,7 @@ print_banner(WINDOW *win)
 	wrefresh(win);
 }
 
+/* Initialize the WINDOW objects inside the global tui struct */
 void
 windows_init(int rows, int cols)
 {
@@ -261,6 +294,7 @@ windows_init(int rows, int cols)
 	wtimeout(tui.infowin, _upd_interval);
 }
 
+/* Draw the lines demarking the quadrants in the IQ plot */
 void
 iq_draw_quadrants(WINDOW *win)
 {

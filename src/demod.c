@@ -28,7 +28,7 @@ demod_init(Sample *src, unsigned interp_mult, float pll_bw, unsigned sym_rate)
 	ret->agc = agc_init(AGC_TARGET, AGC_WINSIZE);
 
 	/* Initialize the interpolator, associating raw_samp to it */
-	ret->interp = interp_init(src, RRC_ALPHA, RRC_FIR_ORDER, interp_mult);
+	ret->interp = interp_init(src, RRC_ALPHA, RRC_FIR_ORDER, interp_mult, sym_rate);
 	/* Discard the first null samples */
 	ret->interp->read(ret->interp, RRC_FIR_ORDER*interp_mult);
 

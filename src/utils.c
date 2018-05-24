@@ -83,8 +83,7 @@ usage(char *pname)
 			"   -o, --output <file>     Output decoded symbols to <file>\n"
 			"   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 90)\n"
 	        "   -r, --rate <rate>       Set the symbol rate to <rate> (default: 72000)\n"
-	        "   -s, --oversamp <mult>   Set the interpolator oversampling factor to <mult> (default: 4)\n"
-	        "   -w, --wait              Wait for user input before closing\n"
+	        "   -O, --oversamp <mult>   Set the interpolator oversampling factor to <mult> (default: 6)\n"
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50)\n"
 	        "   -B, --batch             Do not use ncurses, just write the message log to stdout\n"
 	        "\n"
@@ -92,6 +91,16 @@ usage(char *pname)
 	        "   -v, --version           Print version info\n"
 	        );
 	exit(0);
+}
+
+void
+seconds_to_str(unsigned secs, char *buf)
+{
+	unsigned h, m, s;
+	s = secs % 60;
+	m = (secs / 60) % 60;
+	h = secs / 3600;
+	sprintf(buf, "%02u:%02u:%02u", h, m, s);
 }
 
 char*

@@ -8,6 +8,6 @@
 
 #include "sample.h"
 
-Sample* interp_init(Sample *src, float alpha, unsigned order, unsigned factor);
+Sample* interp_init(Sample *src, float alpha, unsigned order, unsigned factor, int sym_rate);
 
 #endif

@@ -12,6 +12,7 @@
 /* Default values */
 #define SYM_RATE 72000
 #define INTERP_FACTOR 4
+#define SLEEP_INTERVAL 2
 
 static int stdout_print_info(const char *msg, ...);
 
@@ -23,13 +24,11 @@ main(int argc, char *argv[])
 	int pll_locked;
 	Sample *raw_samp;
 	Demod *demod;
-	int (*anykey)(void);
 	int (*log)(const char *msg, ...);
 
 	/* Command line changeable parameters {{{*/
 	int symbol_rate;
 	int batch_mode;
-	int wait_on_exit;
 	int upd_interval;
 	float costas_bw;
 	unsigned interp_factor;
@@ -38,10 +37,8 @@ main(int argc, char *argv[])
 	/* Argument handling {{{ */
 
 	/* Initialize the parameters that can be overridden with command-line args */
-	wait_on_exit = 0;
 	batch_mode  = 0;
 	log = tui_print_info;
-	anykey = tui_wait_for_user_input;
 	upd_interval = UPD_INTERVAL;
 	symbol_rate = SYM_RATE;
 	costas_bw = COSTAS_BW;
@@ -63,7 +60,6 @@ main(int argc, char *argv[])
 		case 'B':
 			batch_mode = 1;
 			log = stdout_print_info;
-			anykey = getchar;
 			break;
 		case 'h':
 			usage(argv[0]);
@@ -82,9 +78,6 @@ main(int argc, char *argv[])
 			break;
 		case 'v':
 			version();
-			break;
-		case 'w':
-			wait_on_exit = 1;
 			break;
 		default:
 			usage(argv[0]);
@@ -129,37 +122,37 @@ main(int argc, char *argv[])
 		pll_locked = demod_is_pll_locked(demod);
 
 		if (batch_mode) {
-			log("(%5.1f%%) Carrier: %+7.1f Hz %s\n",
-			    in_perc, freq, pll_locked ? "Locked" : "");
-			sleep(5);
+			log("(%5.1f%%) Carrier: %+7.1f Hz, Locked: %s\n",
+			    in_perc, freq, pll_locked ? "Yes" : "No");
+			sleep(SLEEP_INTERVAL);
 		} else {
 			if (tui_process_input()) {
 				/* Exit on user request */
+				log("Aborted\n");
 				break;
 			}
-			tui_update_file_in(in_perc);
+			tui_update_file_in(wav_get_size(raw_samp), raw_samp->samplerate, in_perc);
 			tui_update_data_out(demod_get_bytes(demod));
 			tui_update_pll(freq, pll_locked);
 			tui_draw_constellation(demod_get_buf(demod), 256);
 		}
 	}
-	log("Decoding completed\n");
-
-	if (wait_on_exit) {
-		log("Press any key to exit...\n");
-		anykey();
+	if (!demod_status(demod)) {
+		log("Decoding completed\n");
 	}
 
 	demod_join(demod);
 	raw_samp->close(raw_samp);
-	if (!batch_mode) {
-		tui_deinit();
-	}
 	if (free_fname_on_exit) {
 		free(out_fname);
 	}
 
-	/* Print some stats about our progress */
+	if (!batch_mode) {
+		log("Press any key to exit...\n");
+		tui_wait_for_user_input();
+		tui_deinit();
+	}
+
 	return 0;
 }
 

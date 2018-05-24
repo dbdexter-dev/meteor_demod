@@ -21,7 +21,7 @@ typedef struct {
 Filter*       filter_new(unsigned fwd_count, unsigned back_count, ...);
 Filter*       filter_copy(const Filter *orig);
 
-Filter*       filter_rrc(unsigned taps, unsigned oversamp_factor, float alpha);
+Filter*       filter_rrc(unsigned order, unsigned factor, float osf, float alpha);
 
 float complex filter_fwd(Filter *flt, float complex in);
 void          filter_free(Filter *flt);
