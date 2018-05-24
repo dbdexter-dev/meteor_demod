@@ -108,8 +108,8 @@ tui_process_input()
 	return 0;
 }
 
-void
-tui_print_info(char *msg, ...)
+int
+tui_print_info(const char *msg, ...)
 {
 	time_t t;
 	va_list ap;
@@ -121,10 +121,12 @@ tui_print_info(char *msg, ...)
 	t = time(NULL);
 	tm = localtime(&t);
 	strftime(timestr, sizeof(timestr), "%T", tm);
-	wprintw(tui.infowin, "(%s) ", timestr, msg);
+	wprintw(tui.infowin, "(%s) ", timestr);
 	va_start(ap, msg);
 	vwprintw(tui.infowin, msg, ap);
 	va_end(ap);
+
+	return 0;
 }
 
 void

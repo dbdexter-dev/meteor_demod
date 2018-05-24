@@ -10,7 +10,7 @@ void tui_handle_resize();
 
 int tui_process_input();
 
-void tui_print_info(char *msg, ...);
+int tui_print_info(const char *msg, ...);
 void tui_update_pll(float freq, int islocked);
 void tui_draw_constellation(char *dots, unsigned count);
 void tui_update_file_in(float perc);

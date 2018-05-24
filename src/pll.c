@@ -60,17 +60,15 @@ costas_resync(Costas *self, float complex samp)
 	self->moving_avg = (self->moving_avg * (AVG_WINSIZE-1) + abs(error))/AVG_WINSIZE;
 	error = float_clamp(error, 1.0);
 
-	/* Apply phase and frequency corrections */
+	/* Apply phase and frequency corrections, and advance the phase */
 	self->nco_phase = fmod(self->nco_phase + self->nco_freq + self->alpha*error, 2*M_PI);
 	self->nco_freq = float_clamp(self->nco_freq + self->beta*error, FREQ_MAX);
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
 	if (!self->locked && self->moving_avg < 0.015) {
-		tui_print_info("PLL lock acquired\n");
 		costas_recompute_coeffs(self, self->damping, self->bw/2);
 		self->locked = 1;
 	} else if (self->locked && self->moving_avg > 0.035) {
-		tui_print_info("PLL lock lost\n");
 		costas_recompute_coeffs(self, self->damping, self->bw);
 		self->locked = 0;
 	}

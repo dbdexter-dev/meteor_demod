@@ -86,6 +86,7 @@ usage(char *pname)
 	        "   -s, --oversamp <mult>   Set the interpolator oversampling factor to <mult> (default: 4)\n"
 	        "   -w, --wait              Wait for user input before closing\n"
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50)\n"
+	        "   -B, --batch             Do not use ncurses, just write the message log to stdout\n"
 	        "\n"
 	        "   -h, --help              Print this help screen\n"
 	        "   -v, --version           Print version info\n"
