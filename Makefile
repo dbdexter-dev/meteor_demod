@@ -8,9 +8,9 @@ PREFIX=/usr
 
 default: release
 
-debug: CFLAGS+= -g -D__DEBUG
+debug: CFLAGS += -g -D__DEBUG -Werror
 debug: src
-release: CFLAGS+= -O2
+release: CFLAGS += -O2
 release: src
 
 src:

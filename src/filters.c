@@ -6,8 +6,8 @@
 float compute_rrc_coeff(int stage_no, unsigned n_taps, float osf, float alpha);
 
 /* Create a new filter, a FIR if back_count is 0, an IIR filter otherwise.
- * Variable length arguments are two double ptrs, which indicate the
- * coefficients to be used in the filter */
+ * Variable length arguments are two ptrs to doubles, holding the coefficients
+ * to use in the filter */
 Filter*
 filter_new(unsigned fwd_count, unsigned back_count, ...)
 {
@@ -16,7 +16,6 @@ filter_new(unsigned fwd_count, unsigned back_count, ...)
 	va_list flt_parm;
 	double *fwd_coeff;
 	double *back_coeff;
-
 
 	flt = safealloc(sizeof(*flt));
 

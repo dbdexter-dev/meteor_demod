@@ -12,7 +12,7 @@
 /* Default values */
 #define SYM_RATE 72000
 #define INTERP_FACTOR 4
-#define SLEEP_INTERVAL 2
+#define SLEEP_INTERVAL 5
 
 static int stdout_print_info(const char *msg, ...);
 
@@ -100,11 +100,12 @@ main(int argc, char *argv[])
 		fatal("Couldn't open samples file");
 	}
 
-	splash();
 
 	/* Initialize the UI */
 	if (!batch_mode) {
 		tui_init(upd_interval);
+	} else {
+		splash();
 	}
 
 	log("Will read from %s\n", argv[optind]);
@@ -128,7 +129,6 @@ main(int argc, char *argv[])
 		} else {
 			if (tui_process_input()) {
 				/* Exit on user request */
-				log("Aborted\n");
 				break;
 			}
 			tui_update_file_in(wav_get_size(raw_samp), raw_samp->samplerate, in_perc);
@@ -139,6 +139,8 @@ main(int argc, char *argv[])
 	}
 	if (!demod_status(demod)) {
 		log("Decoding completed\n");
+	} else {
+		log("Aborting\n");
 	}
 
 	demod_join(demod);

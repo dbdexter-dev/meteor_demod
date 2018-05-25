@@ -10,7 +10,7 @@
 
 typedef struct {
 	Demod *self;
-	char *out_fname;
+	const char *out_fname;
 } ThrArgs;
 
 static void* demod_thr_run(void* args);
@@ -47,7 +47,7 @@ demod_init(Sample *src, unsigned interp_mult, float pll_bw, unsigned sym_rate)
 }
 
 void
-demod_start(Demod *self, char *fname)
+demod_start(Demod *self, const char *fname)
 {
 	ThrArgs *args;
 
@@ -60,13 +60,13 @@ demod_start(Demod *self, char *fname)
 }
 
 int
-demod_status(Demod *self)
+demod_status(const Demod *self)
 {
 	return self->thr_is_running;
 }
 
 int
-demod_is_pll_locked(Demod *self)
+demod_is_pll_locked(const Demod *self)
 {
 	return self->cst->locked;
 }
@@ -84,20 +84,20 @@ demod_get_bytes(Demod *self)
 }
 
 float
-demod_get_perc(Demod *self)
+demod_get_perc(const Demod *self)
 {
 	return wav_get_perc(self->src);
 }
 
 float
-demod_get_freq(Demod *self)
+demod_get_freq(const Demod *self)
 {
 	return self->cst->nco_freq*self->sym_rate/(2*M_PI);
 }
 
 /* XXX not thread-safe */
-char*
-demod_get_buf(Demod *self)
+const char*
+demod_get_buf(const Demod *self)
 {
 	return self->out_buf;
 }

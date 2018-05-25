@@ -18,7 +18,7 @@ static int wav_close(Sample *samp);
 extern int errno;
 
 Sample*
-open_samples_file(char *fname)
+open_samples_file(const char *fname)
 {
 	Sample *samp;
 	WavState *state;
@@ -96,14 +96,14 @@ wav_read(Sample *self, size_t count)
 
 /* Return how for into the file we are */
 float
-wav_get_perc(Sample *self)
+wav_get_perc(const Sample *self)
 {
 	const WavState* state = self->_backend;
 	return (float)state->samples_read/state->total_samples*100;
 }
 
 unsigned
-wav_get_size(Sample *self)
+wav_get_size(const Sample *self)
 {
 	const WavState* state = self->_backend;
 	return state->total_samples;

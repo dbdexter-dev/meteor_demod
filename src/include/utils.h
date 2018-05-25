@@ -18,8 +18,8 @@ void  humanize(size_t count, char *buf);
 char* gen_fname();
 void  seconds_to_str(unsigned secs, char *buf);
 
-void  usage(char *pname);
-void  fatal(char *msg);
+void  usage(const char *pname);
+void  fatal(const char *msg);
 void  splash();
 void  version();
 void* safealloc(size_t size);

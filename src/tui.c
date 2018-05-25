@@ -149,8 +149,8 @@ tui_update_pll(float freq, int islocked)
 	wattrset(tui.pll, A_BOLD);
 	wprintw(tui.pll, "PLL info\n");
 	wattroff(tui.pll, A_BOLD);
-	wprintw(tui.pll, "Carrier Freq     Status\n");
-	wprintw(tui.pll, "%+7.1f Hz       ", freq);
+	wprintw(tui.pll, "Carrier Freq\tStatus\n");
+	wprintw(tui.pll, "%+7.1f Hz\t", freq);
 	if (islocked) {
 		wattrset(tui.pll, COLOR_PAIR(PAIR_GREEN_DEF));
 		wprintw(tui.pll, "%s", "Locked");
@@ -166,7 +166,7 @@ tui_update_pll(float freq, int islocked)
  * indicative of the signal quality (*dots should be mutexed for this to be
  * accurate, since it comes directly from the decoding thread's memory domain) */
 void
-tui_draw_constellation(char *dots, unsigned count)
+tui_draw_constellation(const char *dots, unsigned count)
 {
 	char x, y;
 	int nr, nc;
@@ -185,6 +185,9 @@ tui_draw_constellation(char *dots, unsigned count)
 		prev = mvwinch(tui.iq, y+nr/2, x+nc/2);
 		switch(prev) {
 		case '.':
+			waddch(tui.iq, '-');
+			break;
+		case '-':
 			waddch(tui.iq, '+');
 			break;
 		case '+':
@@ -267,7 +270,7 @@ tui_deinit()
 void
 print_banner(WINDOW *win)
 {
-	mvwprintw(win, 0, 0, "\t~ Meteor M2 LRPT Demodulator ~");
+	mvwprintw(win, 0, 0, "\t~ Meteor M2 LRPT Demodulator v%s ~", VERSION);
 	wrefresh(win);
 }
 

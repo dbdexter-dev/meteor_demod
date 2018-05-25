@@ -26,8 +26,8 @@ struct wave_header
 };
 
 
-Sample* open_samples_file(char *fname);
-float wav_get_perc(Sample *samp);
-unsigned wav_get_size(Sample *samp);
+Sample* open_samples_file(const char *fname);
+float wav_get_perc(const Sample *samp);
+unsigned wav_get_size(const Sample *samp);
 
 #endif

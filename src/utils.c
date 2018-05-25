@@ -75,7 +75,7 @@ humanize(size_t count, char *buf)
 
 /* Print usage info */
 void
-usage(char *pname)
+usage(const char *pname)
 {
 	splash();
 	fprintf(stderr, "Usage: %s [options] file_in\n", pname);
@@ -83,7 +83,7 @@ usage(char *pname)
 			"   -o, --output <file>     Output decoded symbols to <file>\n"
 			"   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 90)\n"
 	        "   -r, --rate <rate>       Set the symbol rate to <rate> (default: 72000)\n"
-	        "   -O, --oversamp <mult>   Set the interpolator oversampling factor to <mult> (default: 6)\n"
+	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 4)\n"
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50)\n"
 	        "   -B, --batch             Do not use ncurses, just write the message log to stdout\n"
 	        "\n"
@@ -93,9 +93,12 @@ usage(char *pname)
 	exit(0);
 }
 
+/* Convert seconds to a HH:MM:SS string */
 void
 seconds_to_str(unsigned secs, char *buf)
 {
+	assert(secs < (99*60*60));
+
 	unsigned h, m, s;
 	s = secs % 60;
 	m = (secs / 60) % 60;
@@ -103,6 +106,7 @@ seconds_to_str(unsigned secs, char *buf)
 	sprintf(buf, "%02u:%02u:%02u", h, m, s);
 }
 
+/* Generate a semi-unique filename */
 char*
 gen_fname()
 {
@@ -123,7 +127,7 @@ gen_fname()
 void
 splash()
 {
-    fprintf(stderr, "\nMeteor-M2 LRPT demodulator v%s\n\n", VERSION);
+    printf("\nMeteor-M2 LRPT demodulator v%s\n\n", VERSION);
 }
 
 
@@ -139,7 +143,7 @@ version()
 
 /* Abort */
 void
-fatal(char *msg)
+fatal(const char *msg)
 {
 	fprintf(stderr, "[FATAL]: %s\n", msg);
 	exit(1);
