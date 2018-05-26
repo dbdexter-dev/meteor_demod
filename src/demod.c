@@ -116,7 +116,6 @@ demod_join(Demod *self)
 	self->interp->close(self->interp);
 
 	free(self);
-
 }
 
 /* Static functions {{{ */

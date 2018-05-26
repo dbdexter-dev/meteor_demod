@@ -12,7 +12,7 @@
 
 /* Default values */
 #define SYM_RATE 72000
-#define INTERP_FACTOR 4
+#define INTERP_FACTOR 8
 #define SLEEP_INTERVAL 5000
 
 static int stdout_print_info(const char *msg, ...);

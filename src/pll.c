@@ -4,7 +4,7 @@
 #include "tui.h"
 #include "utils.h"
 
-#define FREQ_MAX 1.0
+#define FREQ_MAX 30000.0/72000.0
 #define AVG_WINSIZE 40000
 
 static float costas_compute_delta(float i_branch, float q_branch);
@@ -62,16 +62,23 @@ costas_resync(Costas *self, float complex samp)
 
 	/* Apply phase and frequency corrections, and advance the phase */
 	self->nco_phase = fmod(self->nco_phase + self->nco_freq + self->alpha*error, 2*M_PI);
-	self->nco_freq = float_clamp(self->nco_freq + self->beta*error, FREQ_MAX);
+	self->nco_freq = self->nco_freq + self->beta*error;
+	if (self->nco_freq <= -FREQ_MAX) {
+		self->nco_freq = FREQ_MAX;
+	} else if (self->nco_freq >= FREQ_MAX) {
+		self->nco_freq = -FREQ_MAX;
+	}
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
-	if (!self->locked && self->moving_avg < 0.015) {
+	if (!self->locked && self->moving_avg < 0.008) {
 		costas_recompute_coeffs(self, self->damping, self->bw/2);
 		self->locked = 1;
 	} else if (self->locked && self->moving_avg > 0.035) {
 		costas_recompute_coeffs(self, self->damping, self->bw);
 		self->locked = 0;
 	}
+
+
 
 	return retval;
 }

@@ -88,7 +88,7 @@ filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 	double *coeffs;
 	Filter *rrc;
 
-	taps = order*factor+1;
+	taps = order*2+1;
 
 	coeffs = safealloc(sizeof(*coeffs) * taps);
 	for (i=0; i<taps; i++) {
@@ -161,10 +161,10 @@ compute_rrc_coeff(int stage_no, unsigned taps, float osf, float alpha)
 
 	order = (taps-1)/2;
 
-	t = abs(order - stage_no)/(float)osf;
+	t = abs(order - stage_no)/osf;
 
 	if (t==0) {
-		return sqrt(M_SQRT2);
+		return 1-alpha+4*alpha/M_PI;
 	}
 
 	coeff = sin(M_PI*t*(1-alpha)) + 4*alpha*t*cos(M_PI*t*(1+alpha));

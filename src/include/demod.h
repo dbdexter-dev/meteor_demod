@@ -7,7 +7,7 @@
 #include "sample.h"
 
 /* Costas loop default parameters */
-#define COSTAS_BW 90
+#define COSTAS_BW 100
 #define COSTAS_DAMP 1/M_SQRT2
 #define COSTAS_INIT_FREQ -0.005
 
@@ -17,7 +17,7 @@
 
 /* RRC default parameters, alpha taken from the .grc meteor decode script */
 #define RRC_ALPHA 0.6
-#define RRC_FIR_ORDER 32
+#define RRC_FIR_ORDER 64
 
 /* I/O chunk sizes */
 #define CHUNKSIZE 32768

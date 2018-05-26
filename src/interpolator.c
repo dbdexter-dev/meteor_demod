@@ -76,7 +76,7 @@ interp_read(Sample *self, size_t count)
 
 	/* Feed through the filter, with zero-order hold interpolation */
 	for (i=0; i<count; i++) {
-		self->data[i] = filter_fwd(rrc, src->data[i/factor]) / M_SQRT2;
+		self->data[i] = filter_fwd(rrc, src->data[i/factor]);
 	}
 
 	return count;

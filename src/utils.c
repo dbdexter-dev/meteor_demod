@@ -81,12 +81,12 @@ usage(const char *pname)
 	fprintf(stderr, "Usage: %s [options] file_in\n", pname);
 	fprintf(stderr,
 			"   -o, --output <file>     Output decoded symbols to <file>\n"
-			"   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 90)\n"
+			"   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)\n"
 	        "   -r, --rate <rate>       Set the symbol rate to <rate> (default: 72000)\n"
-	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 4)\n"
+	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 8)\n"
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50ms in TUI mode, 5000ms in batch mode)\n"
 	        "   -B, --batch             Do not use ncurses, just write the message log to stdout\n"
-	        "   -q, --quiet             Do not print status information to the info log\n"
+	        "   -q, --quiet             Do not print status information\n"
 	        "\n"
 	        "   -h, --help              Print this help screen\n"
 	        "   -v, --version           Print version info\n"
