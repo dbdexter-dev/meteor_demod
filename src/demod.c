@@ -109,6 +109,7 @@ demod_join(Demod *self)
 
 	self->thr_is_running = 0;
 	pthread_join(self->t, &retval);
+	pthread_mutex_destroy(&self->mutex);
 
 	agc_free(self->agc);
 	costas_free(self->cst);

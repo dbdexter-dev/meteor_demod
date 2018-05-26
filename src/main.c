@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 #include "demod.h"
 #include "options.h"
@@ -12,7 +13,7 @@
 /* Default values */
 #define SYM_RATE 72000
 #define INTERP_FACTOR 4
-#define SLEEP_INTERVAL 5
+#define SLEEP_INTERVAL 5000
 
 static int stdout_print_info(const char *msg, ...);
 
@@ -20,6 +21,7 @@ int
 main(int argc, char *argv[])
 {
 	int c, free_fname_on_exit;
+	struct timespec timespec;
 	float in_perc, freq;
 	int pll_locked;
 	Sample *raw_samp;
@@ -30,6 +32,7 @@ main(int argc, char *argv[])
 	int symbol_rate;
 	int batch_mode;
 	int upd_interval;
+	int quiet;
 	float costas_bw;
 	unsigned interp_factor;
 	char *out_fname;
@@ -38,6 +41,7 @@ main(int argc, char *argv[])
 
 	/* Initialize the parameters that can be overridden with command-line args */
 	batch_mode  = 0;
+	quiet = 0;
 	log = tui_print_info;
 	upd_interval = UPD_INTERVAL;
 	symbol_rate = SYM_RATE;
@@ -59,6 +63,7 @@ main(int argc, char *argv[])
 			break;
 		case 'B':
 			batch_mode = 1;
+			upd_interval = SLEEP_INTERVAL;
 			log = stdout_print_info;
 			break;
 		case 'h':
@@ -69,6 +74,9 @@ main(int argc, char *argv[])
 			break;
 		case 'O':
 			interp_factor = atoi(optarg);
+			break;
+		case 'q':
+			quiet = 1;
 			break;
 		case 'r':
 			symbol_rate = atoi(optarg);
@@ -100,21 +108,27 @@ main(int argc, char *argv[])
 		fatal("Couldn't open samples file");
 	}
 
-
 	/* Initialize the UI */
 	if (!batch_mode) {
 		tui_init(upd_interval);
-	} else {
+	} else if (!quiet) {
 		splash();
 	}
 
-	log("Will read from %s\n", argv[optind]);
-	log("Will output to %s\n", out_fname);
+	if (!quiet) {
+		log("Will read from %s\n", argv[optind]);
+		log("Will output to %s\n", out_fname);
+	}
 
 	/* Initialize the demodulator */
 	demod = demod_init(raw_samp, interp_factor, costas_bw, symbol_rate);
 	demod_start(demod, out_fname);
-	log("Demodulator initialized\n");
+	if (!quiet) {
+		log("Demodulator initialized\n");
+	}
+
+	timespec.tv_sec = upd_interval/1000;
+	timespec.tv_nsec = ((upd_interval - timespec.tv_sec*1000))*1000L*1000;
 
 	/* Main UI update loop */
 	while (demod_status(demod)) {
@@ -123,9 +137,11 @@ main(int argc, char *argv[])
 		pll_locked = demod_is_pll_locked(demod);
 
 		if (batch_mode) {
-			log("(%5.1f%%) Carrier: %+7.1f Hz, Locked: %s\n",
-			    in_perc, freq, pll_locked ? "Yes" : "No");
-			sleep(SLEEP_INTERVAL);
+			if (!quiet) {
+				log("(%5.1f%%) Carrier: %+7.1f Hz, Locked: %s\n",
+					in_perc, freq, pll_locked ? "Yes" : "No");
+			}
+			nanosleep(&timespec, NULL);
 		} else {
 			if (tui_process_input()) {
 				/* Exit on user request */
@@ -137,10 +153,12 @@ main(int argc, char *argv[])
 			tui_draw_constellation(demod_get_buf(demod), 256);
 		}
 	}
-	if (!demod_status(demod)) {
-		log("Decoding completed\n");
-	} else {
-		log("Aborting\n");
+	if (!quiet) {
+		if (!demod_status(demod)) {
+			log("Decoding completed\n");
+		} else {
+			log("Aborting\n");
+		}
 	}
 
 	demod_join(demod);
