@@ -7,11 +7,12 @@
 #include <getopt.h>
 #include <stdlib.h>
 
-#define SHORTOPTS "b:Bho:qr:R:O:vw"
+#define SHORTOPTS "b:Bf:ho:qr:R:O:vw"
 
 struct option longopts[] = {
 	{ "pll-bw",       1, NULL, 'b' },
 	{ "batch",        1, NULL, 'B' },
+	{ "fir-order",    1, NULL, 'f' },
 	{ "help",         0, NULL, 'h' },
 	{ "output",       1, NULL, 'o' },
 	{ "oversamp",     1, NULL, 'O' },

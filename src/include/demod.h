@@ -19,6 +19,9 @@
 #define RRC_ALPHA 0.6
 #define RRC_FIR_ORDER 64
 
+/* Interpolator default options */
+#define INTERP_FACTOR 8
+
 /* I/O chunk sizes */
 #define CHUNKSIZE 32768
 #define SYM_CHUNKSIZE 1024
@@ -37,7 +40,7 @@ typedef struct {
 	char out_buf[SYM_CHUNKSIZE];
 } Demod;
 
-Demod*      demod_init(Sample *src, unsigned interp_factor, float pll_bw, unsigned sym_rate);
+Demod*      demod_init(Sample *src, unsigned interp_factor, unsigned rrc_order, float pll_bw, unsigned sym_rate);
 void        demod_start(Demod *self, const char *fname);
 void        demod_join(Demod *self);
 

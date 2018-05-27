@@ -16,7 +16,7 @@ typedef struct {
 static void* demod_thr_run(void* args);
 
 Demod*
-demod_init(Sample *src, unsigned interp_mult, float pll_bw, unsigned sym_rate)
+demod_init(Sample *src, unsigned interp_mult, unsigned rrc_order, float pll_bw, unsigned sym_rate)
 {
 	Demod *ret;
 
@@ -28,9 +28,9 @@ demod_init(Sample *src, unsigned interp_mult, float pll_bw, unsigned sym_rate)
 	ret->agc = agc_init(AGC_TARGET, AGC_WINSIZE);
 
 	/* Initialize the interpolator, associating raw_samp to it */
-	ret->interp = interp_init(src, RRC_ALPHA, RRC_FIR_ORDER, interp_mult, sym_rate);
+	ret->interp = interp_init(src, RRC_ALPHA, rrc_order, interp_mult, sym_rate);
 	/* Discard the first null samples */
-	ret->interp->read(ret->interp, RRC_FIR_ORDER*interp_mult);
+	ret->interp->read(ret->interp, rrc_order*interp_mult);
 
 	/* Initialize costas loop */
 	pll_bw = 2*M_PI*pll_bw/sym_rate;

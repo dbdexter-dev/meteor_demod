@@ -80,13 +80,16 @@ usage(const char *pname)
 	splash();
 	fprintf(stderr, "Usage: %s [options] file_in\n", pname);
 	fprintf(stderr,
-			"   -o, --output <file>     Output decoded symbols to <file>\n"
-			"   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)\n"
+	        "   -o, --output <file>     Output decoded symbols to <file>\n"
 	        "   -r, --rate <rate>       Set the symbol rate to <rate> (default: 72000)\n"
-	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 8)\n"
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50ms in TUI mode, 5000ms in batch mode)\n"
-	        "   -B, --batch             Do not use ncurses, just write the message log to stdout\n"
+	        "   -B, --batch             Do not use ncurses, write the message log to stdout instead\n"
 	        "   -q, --quiet             Do not print status information\n"
+	        "\n"
+	        "Advanced options:\n"
+	        "   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)\n"
+	        "   -f, --fir-order <ord>   Set the RRC filter order to <ord> (default: 64)\n"
+	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 8)\n"
 	        "\n"
 	        "   -h, --help              Print this help screen\n"
 	        "   -v, --version           Print version info\n"
@@ -136,7 +139,7 @@ splash()
 void
 version()
 {
-	splash();
+    fprintf(stderr, "Meteor-M2 LRPT demodulator v%s\n", VERSION);
     fprintf(stderr, "Released under the GNU GPLv3\n\n");
     exit(0);
 }

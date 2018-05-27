@@ -12,7 +12,6 @@
 
 /* Default values */
 #define SYM_RATE 72000
-#define INTERP_FACTOR 8
 #define SLEEP_INTERVAL 5000
 
 static int stdout_print_info(const char *msg, ...);
@@ -35,6 +34,7 @@ main(int argc, char *argv[])
 	int quiet;
 	float costas_bw;
 	unsigned interp_factor;
+	unsigned rrc_order;
 	char *out_fname;
 	/*}}}*/
 	/* Argument handling {{{ */
@@ -48,6 +48,7 @@ main(int argc, char *argv[])
 	costas_bw = COSTAS_BW;
 	out_fname = NULL;
 	interp_factor = INTERP_FACTOR;
+	rrc_order = RRC_FIR_ORDER;
 	free_fname_on_exit = 0;
 
 	if (argc < 2) {
@@ -65,6 +66,9 @@ main(int argc, char *argv[])
 			batch_mode = 1;
 			upd_interval = SLEEP_INTERVAL;
 			log = stdout_print_info;
+			break;
+		case 'f':
+			rrc_order = atoi(optarg);
 			break;
 		case 'h':
 			usage(argv[0]);
@@ -118,10 +122,11 @@ main(int argc, char *argv[])
 	if (!quiet) {
 		log("Will read from %s\n", argv[optind]);
 		log("Will output to %s\n", out_fname);
+		log("Interpolation factor: %d, RRC filter order: %d\n", interp_factor, rrc_order);
 	}
 
 	/* Initialize the demodulator */
-	demod = demod_init(raw_samp, interp_factor, costas_bw, symbol_rate);
+	demod = demod_init(raw_samp, interp_factor, rrc_order, costas_bw, symbol_rate);
 	demod_start(demod, out_fname);
 	if (!quiet) {
 		log("Demodulator initialized\n");
