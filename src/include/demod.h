@@ -9,7 +9,7 @@
 /* Costas loop default parameters */
 #define COSTAS_BW 100
 #define COSTAS_DAMP 1/M_SQRT2
-#define COSTAS_INIT_FREQ -0.005
+#define COSTAS_INIT_FREQ 0.4
 
 /* AGC default parameters */
 #define AGC_WINSIZE 1024*32
@@ -37,18 +37,18 @@ typedef struct {
 	pthread_mutex_t mutex;
 	unsigned bytes_out_count;
 	int thr_is_running;
-	char out_buf[SYM_CHUNKSIZE];
+	int8_t out_buf[SYM_CHUNKSIZE];
 } Demod;
 
-Demod*      demod_init(Sample *src, unsigned interp_factor, unsigned rrc_order, float pll_bw, unsigned sym_rate);
-void        demod_start(Demod *self, const char *fname);
-void        demod_join(Demod *self);
+Demod*        demod_init(Sample *src, unsigned interp_factor, unsigned rrc_order, float pll_bw, unsigned sym_rate);
+void          demod_start(Demod *self, const char *fname);
+void          demod_join(Demod *self);
 
-int         demod_status(const Demod *self);
-int         demod_is_pll_locked(const Demod *self);
-unsigned    demod_get_bytes(Demod *self);
-float       demod_get_perc(const Demod *self);
-float       demod_get_freq(const Demod *self);
-const char* demod_get_buf(const Demod *self);
+int           demod_status(const Demod *self);
+int           demod_is_pll_locked(const Demod *self);
+unsigned      demod_get_bytes(Demod *self);
+float         demod_get_perc(const Demod *self);
+float         demod_get_freq(const Demod *self);
+const int8_t* demod_get_buf(const Demod *self);
 
 #endif
