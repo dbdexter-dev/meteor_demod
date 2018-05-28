@@ -166,9 +166,9 @@ tui_update_pll(float freq, int islocked)
  * indicative of the signal quality (*dots should be mutexed for this to be
  * accurate, since it comes directly from the decoding thread's memory domain) */
 void
-tui_draw_constellation(const char *dots, unsigned count)
+tui_draw_constellation(const int8_t *dots, unsigned count)
 {
-	char x, y;
+	int8_t x, y;
 	int nr, nc;
 	unsigned i;
 	int prev;

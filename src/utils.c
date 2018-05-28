@@ -5,8 +5,8 @@
 #include <time.h>
 #include "utils.h"
 
-/* Clamp a real value to a signed char */
-char
+/* Clamp a real value to a int8_t */
+int8_t
 clamp(float x)
 {
 	if (x < -128.0) {

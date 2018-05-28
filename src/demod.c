@@ -96,7 +96,7 @@ demod_get_freq(const Demod *self)
 }
 
 /* XXX not thread-safe */
-const char*
+const int8_t*
 demod_get_buf(const Demod *self)
 {
 	return self->out_buf;
@@ -126,7 +126,7 @@ demod_thr_run(void* x)
 	int i, count, buf_offset;
 	float complex early, cur, late;
 	float resync_offset, resync_error, resync_period;
-	char *out_buf;
+	int8_t *out_buf;
 
 	const ThrArgs *args = (ThrArgs*)x;
 	Demod *self = args->self;
