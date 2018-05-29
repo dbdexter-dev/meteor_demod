@@ -42,7 +42,7 @@ interp_init(Sample* src, float alpha, unsigned order, unsigned factor, int sym_r
 /* Wrapper to interpolate the source data and provide a transparent translation
  * layer between the raw samples and the interpolated samples */
 int
-interp_read(Sample *self, size_t count)
+interp_read(Sample *const self, size_t count)
 {
 	InterpState *status;
 	Filter *rrc;

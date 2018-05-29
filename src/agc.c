@@ -1,3 +1,4 @@
+#include <math.h>
 #include "agc.h"
 #include "utils.h"
 
@@ -24,7 +25,7 @@ agc_apply(Agc *self, float complex sample)
 	float rho;
 
 	/* Update the sample magnitude average */
-	rho = cabs(sample);
+	rho = sqrt(creal(sample)*creal(sample) + cimag(sample)*cimag(sample));
 	self->avg = (self->avg * (self->window_size - 1) + rho) / self->window_size;
 
 	self->gain = self->target_ampl / self->avg;

@@ -1,7 +1,7 @@
 VERSION=\"0.1b\"
 
-export CFLAGS = -pipe -march=native -Wall -std=c99 -pedantic -D_XOPEN_SOURCE=700 -DVERSION=${VERSION}
-export LDFLAGS =
+export CFLAGS += -pipe -march=native -Wall -std=c99 -pedantic -D_XOPEN_SOURCE=700 -DVERSION=${VERSION}
+export LDFLAGS +=
 PREFIX=/usr
 
 .PHONY: install debug release clean src strip
@@ -10,7 +10,7 @@ default: release
 
 debug: CFLAGS += -g -D__DEBUG -Werror
 debug: src
-release: CFLAGS += -O2
+release: CFLAGS += -O2 -ffast-math
 release: src
 
 src:

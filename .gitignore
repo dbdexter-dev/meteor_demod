@@ -1,3 +1,4 @@
 **/tags
 **/*.o
 src/meteor_demod
+**/cachegrind.out*

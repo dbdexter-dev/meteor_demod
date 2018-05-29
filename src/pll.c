@@ -31,9 +31,9 @@ costas_init(float freq, float damping, float bw)
 	costas->moving_avg = 1;
 	costas->locked = 0;
 
-	_lut_tanh = safealloc(sizeof(float) * 255);
-	for (i=0; i<255; i++) {
-		_lut_tanh[i] = tanh((i-128)/2);
+	_lut_tanh = safealloc(sizeof(float) * 256);
+	for (i=0; i<256; i++) {
+		_lut_tanh[i] = tanh((i-128));
 	}
 
 
@@ -63,6 +63,7 @@ costas_resync(Costas *self, float complex samp)
 	/* Apply phase and frequency corrections, and advance the phase */
 	self->nco_phase = fmod(self->nco_phase + self->nco_freq + self->alpha*error, 2*M_PI);
 	self->nco_freq = self->nco_freq + self->beta*error;
+
 	if (self->nco_freq <= -FREQ_MAX) {
 		self->nco_freq = FREQ_MAX;
 	} else if (self->nco_freq >= FREQ_MAX) {
@@ -70,10 +71,10 @@ costas_resync(Costas *self, float complex samp)
 	}
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
-	if (!self->locked && self->moving_avg < 0.01) {
+	if (!self->locked && self->moving_avg < 0.0025) {
 		costas_recompute_coeffs(self, self->damping, self->bw/2);
 		self->locked = 1;
-	} else if (self->locked && self->moving_avg > 0.035) {
+	} else if (self->locked && self->moving_avg > 0.025) {
 		costas_recompute_coeffs(self, self->damping, self->bw);
 		self->locked = 0;
 	}
