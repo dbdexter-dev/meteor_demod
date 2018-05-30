@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <string.h>
 #include <math.h>
 #include "filters.h"
 #include "utils.h"
@@ -92,7 +93,7 @@ filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 
 	coeffs = safealloc(sizeof(*coeffs) * taps);
 	for (i=0; i<taps; i++) {
-		coeffs[i] = compute_rrc_coeff(i, taps, factor*osf, alpha);
+		coeffs[i] = compute_rrc_coeff(i, taps, osf*factor, alpha);
 	}
 
 	rrc = filter_new(taps, 0, coeffs);
@@ -104,29 +105,23 @@ filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 
 /* Feed a signal through a filter, and output the result */
 float complex
-filter_fwd(Filter *self, float complex in)
+filter_fwd(Filter *const self, float complex in)
 {
 	int i;
 	float complex out;
-
-	if (!self->fwd_count && !self->back_count) {
-		return in;
-	}
-
-	/* Update the memory nodes */
-	for (i=self->fwd_count-1; i>0; i--) {
-		self->mem[i] = self->mem[i-1];
-	}
 
 	/* Calculate the new mem[0] value through the feedback coefficients */
 	for (i=1; i<self->back_count; i++) {
 		in -= self->mem[i] * self->back_coeff[i];
 	}
+
+	/* Update the memory nodes */
+	memmove(self->mem+1, self->mem, sizeof(*self->mem) * (self->fwd_count-1));
 	self->mem[0] = in;
 
 	/* Calculate the feed-forward output */
 	out = 0;
-	for (i=0; i<self->fwd_count; i++) {
+	for (i=self->fwd_count-1; i>=0; i--) {
 		out += self->mem[i] * self->fwd_coeff[i];
 	}
 
@@ -151,7 +146,7 @@ filter_free(Filter *self)
 /*Static functions {{{*/
 /* Variable alpha RRC filter coefficients */
 /* Taken from https://www.michael-joost.de/rrcfilter.pdf */
-inline float
+float
 compute_rrc_coeff(int stage_no, unsigned taps, float osf, float alpha)
 {
 	float coeff;

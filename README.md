@@ -27,7 +27,7 @@ Usage: meteor_demod [options] file_in
 Advanced options:
    -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)
    -f, --fir-order <ord>   Set the RRC filter order to <ord> (default: 64)
-   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 8)
+   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 4)
 
    -h, --help              Print this help screen
    -v, --version           Print version info

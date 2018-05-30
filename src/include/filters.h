@@ -9,13 +9,13 @@
 #include <complex.h>
 
 typedef struct {
+	float complex *mem;
+
 	unsigned fwd_count;
 	float *fwd_coeff;
 
 	unsigned back_count;
 	float *back_coeff;
-
-	float complex *mem;
 } Filter;
 
 Filter*       filter_new(unsigned fwd_count, unsigned back_count, ...);

@@ -12,7 +12,7 @@ strip: meteor_demod
 	strip $^
 
 meteor_demod: ${OBJ}
-	gcc ${LDFLAGS} -o $@ $^
+	gcc -o $@ $^ ${LDFLAGS}
 
 main.o: main.c include/options.h
 	gcc ${CFLAGS} -c -o $@ $<

@@ -9,7 +9,7 @@
 /* Costas loop default parameters */
 #define COSTAS_BW 100
 #define COSTAS_DAMP 1/M_SQRT2
-#define COSTAS_INIT_FREQ 0.4
+#define COSTAS_INIT_FREQ 0.001
 
 /* AGC default parameters */
 #define AGC_WINSIZE 1024*32
@@ -20,7 +20,7 @@
 #define RRC_FIR_ORDER 64
 
 /* Interpolator default options */
-#define INTERP_FACTOR 8
+#define INTERP_FACTOR 4
 
 /* I/O chunk sizes */
 #define CHUNKSIZE 32768
@@ -36,7 +36,7 @@ typedef struct {
 
 	pthread_mutex_t mutex;
 	unsigned bytes_out_count;
-	int thr_is_running;
+	volatile int thr_is_running;
 	int8_t out_buf[SYM_CHUNKSIZE];
 } Demod;
 
