@@ -10,7 +10,7 @@ default: release
 
 debug: CFLAGS += -g -D__DEBUG -Werror
 debug: src
-release: CFLAGS += -O2 -ffast-math
+release: CFLAGS += -O2 -ffast-math -flto -ftree-vectorize
 release: src
 
 src:
@@ -22,7 +22,7 @@ strip:
 clean:
 	$(MAKE) -C src clean
 
-install: release
+install: default
 	@echo Installing executable file to ${PREFIX}/bin
 	@mkdir -p ${PREFIX}/bin
 	@cp src/meteor_demod ${PREFIX}/bin
