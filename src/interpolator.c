@@ -62,7 +62,7 @@ interp_read(Sample *const self, size_t count)
 		self->data = safealloc(sizeof(*self->data) * count);
 	} else if (self->count < count) {
 		free(self->data);
-		self->data = malloc(sizeof(*self->data) * count);
+		self->data = safealloc(sizeof(*self->data) * count);
 	}
 
 	self->count = count;

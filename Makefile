@@ -10,7 +10,8 @@ default: release
 
 debug: CFLAGS += -g -D__DEBUG -Werror
 debug: src
-release: CFLAGS += -O2 -ffast-math -flto -ftree-vectorize
+release: CFLAGS += -O2 -ffast-math -flto
+release: LDFLAGS += -flto
 release: src
 
 src:

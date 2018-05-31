@@ -6,6 +6,8 @@
 
 #include <complex.h>
 
+#define AGC_MAX_GAIN 20
+
 typedef struct {
 	unsigned window_size;
 	float avg;

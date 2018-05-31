@@ -124,7 +124,7 @@ demod_thr_run(void* x)
 {
 	FILE *out_fd;
 	int i, count, buf_offset;
-	float complex early, cur, late;
+	float complex before, mid, cur;
 	float resync_offset, resync_error, resync_period;
 	int8_t *out_buf;
 
@@ -147,22 +147,22 @@ demod_thr_run(void* x)
 	/* Main processing loop */
 	buf_offset = 0;
 	resync_offset = 0;
-	early = 0;
+	before = 0;
+	mid = 0;
 	cur = 0;
 	while (self->thr_is_running && (count = self->interp->read(self->interp, CHUNKSIZE))) {
 		for (i=0; i<count; i++) {
 			/* Symbol resampling */
-			late = cur;
-			cur = early;
-			early = agc_apply(self->agc, self->interp->data[i]);
-
-			resync_offset++;
-			if (resync_offset >= resync_period) {
+			if (resync_offset >= resync_period/2 && resync_offset < resync_period/2+1) {
+				mid = agc_apply(self->agc, self->interp->data[i]);
+			} else if (resync_offset >= resync_period) {
+				cur = agc_apply(self->agc, self->interp->data[i]);
 				/* The current sample is in the correct time slot: process it */
-				/* Calculate the symbol timing error (early-late algorithm) */
+				/* Calculate the symbol timing error (Gardner algorithm) */
 				resync_offset -= resync_period;
-				resync_error = (cimag(late) - cimag(early)) * cimag(cur);
-				resync_offset += (resync_error/10000*resync_period/100);
+				resync_error = (cimag(cur) - cimag(before)) * cimag(mid);
+				resync_offset += (resync_error*resync_period/2000000.0);
+				before = cur;
 
 				/* Fine frequency/phase tuning */
 				cur = costas_resync(self->cst, cur);
@@ -180,6 +180,7 @@ demod_thr_run(void* x)
 				self->bytes_out_count += 2;
 				pthread_mutex_unlock(&self->mutex);
 			}
+			resync_offset++;
 		}
 	}
 

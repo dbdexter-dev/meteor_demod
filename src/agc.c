@@ -2,8 +2,6 @@
 #include "agc.h"
 #include "utils.h"
 
-#define AGC_MAX_GAIN 20
-
 /* Initialize an AGC object */
 Agc*
 agc_init(float target_ampl, unsigned window_size)
