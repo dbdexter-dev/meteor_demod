@@ -25,9 +25,8 @@ struct wave_header
 	uint32_t subchunk2_size;
 };
 
-
-Sample* open_samples_file(const char *fname);
-float wav_get_perc(const Sample *samp);
-unsigned wav_get_size(const Sample *samp);
+Source* open_samples_file(const char *fname);
+float wav_get_perc(const Source *samp);
+unsigned wav_get_size(const Source *samp);
 
 #endif

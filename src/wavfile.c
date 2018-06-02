@@ -13,15 +13,15 @@ typedef struct {
 	short *tmp;
 } WavState;
 
-static int wav_read(Sample *samp, size_t count);
-static int wav_close(Sample *samp);
+static int wav_read(Source *samp, size_t count);
+static int wav_close(Source *samp);
 
 extern int errno;
 
-Sample*
+Source*
 open_samples_file(const char *fname)
 {
-	Sample *samp;
+	Source *samp;
 	WavState *state;
 	struct wave_header _header;
 	FILE *fd;
@@ -66,7 +66,7 @@ open_samples_file(const char *fname)
 /* Read $count samples from the opened file, populating the data[] array as
  * expected. */
 int
-wav_read(Sample *self, size_t count)
+wav_read(Source *self, size_t count)
 {
 	WavState *state;
 	int i;
@@ -99,23 +99,23 @@ wav_read(Sample *self, size_t count)
 
 /* Return how for into the file we are */
 float
-wav_get_perc(const Sample *self)
+wav_get_perc(const Source *self)
 {
 	const WavState* state = self->_backend;
 	return (float)state->samples_read/state->total_samples*100;
 }
 
 unsigned
-wav_get_size(const Sample *self)
+wav_get_size(const Source *self)
 {
 	const WavState* state = self->_backend;
 	return state->total_samples;
 }
 
 /* Close the .wav file descriptor and free the memory associated with this
- * Sample object */
+ * Source object */
 int
-wav_close(Sample *self)
+wav_close(Source *self)
 {
 	WavState *state;
 

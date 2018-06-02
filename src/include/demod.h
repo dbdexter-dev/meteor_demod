@@ -1,3 +1,8 @@
+/**
+ * Main demodulator object. This will launch a thread in the background to
+ * process the incoming samples, so it'll interpolate and resample them,
+ * normalize their amplitude, recover the carrier, and write the decoded symbols
+ * to disk */
 #ifndef _METEOR_DEMOD_H
 #define _METEOR_DEMOD_H
 
@@ -28,7 +33,7 @@
 
 typedef struct {
 	Agc *agc;
-	Sample *interp, *src;
+	Source *interp, *src;
 	Costas *cst;
 	float sym_period;
 	unsigned sym_rate;
@@ -40,7 +45,7 @@ typedef struct {
 	int8_t out_buf[SYM_CHUNKSIZE];
 } Demod;
 
-Demod*        demod_init(Sample *src, unsigned interp_factor, unsigned rrc_order, float pll_bw, unsigned sym_rate);
+Demod*        demod_init(Source *src, unsigned interp_factor, unsigned rrc_order, float pll_bw, unsigned sym_rate);
 void          demod_start(Demod *self, const char *fname);
 void          demod_join(Demod *self);
 

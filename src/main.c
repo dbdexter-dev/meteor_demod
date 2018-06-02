@@ -23,9 +23,8 @@ main(int argc, char *argv[])
 	struct timespec timespec;
 	float in_perc, freq;
 	int pll_locked;
-	Sample *raw_samp;
+	Source *raw_samp;
 	Demod *demod;
-	int (*log)(const char *msg, ...);
 
 	/* Command line changeable parameters {{{*/
 	int symbol_rate;
@@ -36,10 +35,9 @@ main(int argc, char *argv[])
 	unsigned interp_factor;
 	unsigned rrc_order;
 	char *out_fname;
+	int (*log)(const char *msg, ...);
 	/*}}}*/
-	/* Argument handling {{{ */
-
-	/* Initialize the parameters that can be overridden with command-line args */
+	/* Initialize the parameters that can be overridden with command-line args {{{*/
 	batch_mode  = 0;
 	quiet = 0;
 	log = tui_print_info;
@@ -50,12 +48,12 @@ main(int argc, char *argv[])
 	interp_factor = INTERP_FACTOR;
 	rrc_order = RRC_FIR_ORDER;
 	free_fname_on_exit = 0;
-
+	/* }}} */
+	/* Parse command line args {{{*/
 	if (argc < 2) {
 		usage(argv[0]);
 	}
 
-	/* Parse command line args */
 	optind = 0;
 	while ((c = getopt_long(argc, argv, SHORTOPTS, longopts, NULL)) != -1) {
 		switch (c) {
@@ -96,10 +94,12 @@ main(int argc, char *argv[])
 		}
 	}
 
+	/* Check if input filename was provided */
 	if (argc - optind < 1) {
 		usage(argv[0]);
 	}
 	/*}}}*/
+
 	/* If no filename was specified, generate one */
 	if (!out_fname) {
 		out_fname = gen_fname();
@@ -132,6 +132,7 @@ main(int argc, char *argv[])
 		log("Demodulator initialized\n");
 	}
 
+	/* Initialize the struct that will be the argument to nanosleep() */
 	timespec.tv_sec = upd_interval/1000;
 	timespec.tv_nsec = ((upd_interval - timespec.tv_sec*1000))*1000L*1000;
 
@@ -158,6 +159,7 @@ main(int argc, char *argv[])
 			tui_draw_constellation(demod_get_buf(demod), 256);
 		}
 	}
+
 	if (!quiet) {
 		if (!demod_status(demod)) {
 			log("Decoding completed\n");

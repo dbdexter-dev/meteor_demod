@@ -4,20 +4,20 @@
 #include "interpolator.h"
 #include "utils.h"
 
-static int interp_read(Sample *self, size_t count);
-static int interp_free(Sample *self);
+static int interp_read(Source *self, size_t count);
+static int interp_free(Source *self);
 
 typedef struct {
-	Sample *src;
+	Source *src;
 	Filter *rrc;
 	unsigned factor;
 } InterpState;
 
 /* Initialize the interpolator, which will use a RRC filter at its core */
-Sample*
-interp_init(Sample* src, float alpha, unsigned order, unsigned factor, int sym_rate)
+Source*
+interp_init(Source* src, float alpha, unsigned order, unsigned factor, int sym_rate)
 {
-	Sample *interp;
+	Source *interp;
 	InterpState *status;
 
 	interp = safealloc(sizeof(*interp));
@@ -42,11 +42,11 @@ interp_init(Sample* src, float alpha, unsigned order, unsigned factor, int sym_r
 /* Wrapper to interpolate the source data and provide a transparent translation
  * layer between the raw samples and the interpolated samples */
 int
-interp_read(Sample *const self, size_t count)
+interp_read(Source *const self, size_t count)
 {
 	InterpState *status;
 	Filter *rrc;
-	Sample *src;
+	Source *src;
 	int i;
 	int factor;
 	size_t true_samp_count;
@@ -57,7 +57,7 @@ interp_read(Sample *const self, size_t count)
 	src = status->src;
 	rrc = status->rrc;
 
-	/* Prepare a buffer for the data that will go into the Sample struct */
+	/* Prepare a buffer for the data that will go into the Source struct */
 	if (!self->data) {
 		self->data = safealloc(sizeof(*self->data) * count);
 	} else if (self->count < count) {
@@ -85,7 +85,7 @@ interp_read(Sample *const self, size_t count)
 /* Free the memory related to the interpolator. Note that this function does not
  * try to close the underlying data source (aka self->_backend->src) */
 int
-interp_free(Sample *self)
+interp_free(Source *self)
 {
 	filter_free(((InterpState*)(self->_backend))->rrc);
 	free(self->_backend);

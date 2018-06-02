@@ -17,6 +17,6 @@ typedef struct sample {
 	int (*read)(struct sample *, size_t);
 	int (*close)(struct sample *);
 	void *_backend;     /* Opaque pointer to stuff used by read() and close() */
-} Sample;
+} Source;
 
 #endif

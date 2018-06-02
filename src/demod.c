@@ -16,7 +16,7 @@ typedef struct {
 static void* demod_thr_run(void* args);
 
 Demod*
-demod_init(Sample *src, unsigned interp_mult, unsigned rrc_order, float pll_bw, unsigned sym_rate)
+demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float pll_bw, unsigned sym_rate)
 {
 	Demod *ret;
 
@@ -32,11 +32,11 @@ demod_init(Sample *src, unsigned interp_mult, unsigned rrc_order, float pll_bw, 
 	/* Discard the first null samples */
 	ret->interp->read(ret->interp, rrc_order*interp_mult);
 
-	/* Initialize costas loop */
+	/* Initialize Costas loop */
 	pll_bw = 2*M_PI*pll_bw/sym_rate;
 	ret->cst = costas_init(COSTAS_INIT_FREQ, COSTAS_DAMP, pll_bw);
 
-	/* Initialize the early-late timing variables */
+	/* Initialize the timing recovery variables */
 	ret->sym_rate = sym_rate;
 	ret->sym_period = ret->interp->samplerate/(float)sym_rate;
 	pthread_mutex_init(&ret->mutex, NULL);
@@ -131,8 +131,6 @@ demod_thr_run(void* x)
 	const ThrArgs *args = (ThrArgs*)x;
 	Demod *self = args->self;
 	out_buf = self->out_buf;
-
-	self->thr_is_running = 1;
 
 	resync_period = self->sym_period;
 

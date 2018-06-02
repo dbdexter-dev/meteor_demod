@@ -91,6 +91,7 @@ filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 	taps = order*2+1;
 
 	coeffs = safealloc(sizeof(*coeffs) * taps);
+	/* Compute the filter coefficients */
 	for (i=0; i<taps; i++) {
 		coeffs[i] = compute_rrc_coeff(i, taps, osf*factor, alpha);
 	}
