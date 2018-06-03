@@ -81,7 +81,8 @@ usage(const char *pname)
 	fprintf(stderr, "Usage: %s [options] file_in\n", pname);
 	fprintf(stderr,
 	        "   -o, --output <file>     Output decoded symbols to <file>\n"
-	        "   -r, --rate <rate>       Set the symbol rate to <rate> (default: 72000)\n"
+	        "   -r, --symrate <rate>    Set the symbol rate to <rate> (default: 72000)\n"
+	        "   -s, --samplerate <samp> Force the input samplerate to <samp> (default: auto)\n"
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50ms in TUI mode, 5000ms in batch mode)\n"
 	        "   -B, --batch             Do not use ncurses, write the message log to stdout instead\n"
 	        "   -q, --quiet             Do not print status information\n"
@@ -93,6 +94,8 @@ usage(const char *pname)
 	        "\n"
 	        "   -h, --help              Print this help screen\n"
 	        "   -v, --version           Print version info\n"
+	        "\n"
+			"If file_in is -, read from stdin\n"
 	        );
 	exit(0);
 }

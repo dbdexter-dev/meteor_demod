@@ -3,8 +3,8 @@
  * stores the data read as well as some metadata that might be useful when
  * parsing the data stream.
  */
-#ifndef _METEOR_SAMPLE_H
-#define _METEOR_SAMPLE_H
+#ifndef _METEOR_SOURCE_H
+#define _METEOR_SOURCE_H
 
 #include <stdlib.h>
 #include <complex.h>
@@ -16,6 +16,8 @@ typedef struct sample {
 	float complex *data;
 	int (*read)(struct sample *, size_t);
 	int (*close)(struct sample *);
+	unsigned (*size)(const struct sample *);
+	unsigned (*done)(const struct sample *);
 	void *_backend;     /* Opaque pointer to stuff used by read() and close() */
 } Source;
 

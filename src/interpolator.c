@@ -4,8 +4,10 @@
 #include "interpolator.h"
 #include "utils.h"
 
-static int interp_read(Source *self, size_t count);
-static int interp_free(Source *self);
+static int      interp_read(Source *self, size_t count);
+static int      interp_free(Source *self);
+static unsigned interp_get_done(const Source *self);
+static unsigned interp_get_size(const Source *self);
 
 typedef struct {
 	Source *src;
@@ -28,6 +30,8 @@ interp_init(Source* src, float alpha, unsigned order, unsigned factor, int sym_r
 	interp->bps = sizeof(*src->data);
 	interp->read = interp_read;
 	interp->close = interp_free;
+	interp->done = interp_get_done;
+	interp->size = interp_get_size;
 
 	interp->_backend = safealloc(sizeof(InterpState));
 	status = (InterpState*) interp->_backend;
@@ -39,8 +43,25 @@ interp_init(Source* src, float alpha, unsigned order, unsigned factor, int sym_r
 	return interp;
 }
 
+/* Static functions {{{ */
 /* Wrapper to interpolate the source data and provide a transparent translation
  * layer between the raw samples and the interpolated samples */
+unsigned
+interp_get_size(const Source *self)
+{
+	InterpState *state;
+	state = (InterpState*)self->_backend;
+	return state->src->size(state->src);
+}
+
+unsigned
+interp_get_done(const Source *self)
+{
+	InterpState *state;
+	state = (InterpState*)self->_backend;
+	return state->src->done(state->src);
+}
+
 int
 interp_read(Source *const self, size_t count)
 {
@@ -93,4 +114,4 @@ interp_free(Source *self)
 	free(self);
 	return 0;
 }
-
+/*}}}*/

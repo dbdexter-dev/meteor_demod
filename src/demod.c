@@ -72,7 +72,7 @@ demod_is_pll_locked(const Demod *self)
 }
 
 unsigned
-demod_get_bytes(Demod *self)
+demod_get_bytes_out(Demod *self)
 {
 	unsigned ret;
 
@@ -83,10 +83,16 @@ demod_get_bytes(Demod *self)
 	return ret;
 }
 
-float
-demod_get_perc(const Demod *self)
+unsigned
+demod_get_done(const Demod *self)
 {
-	return wav_get_perc(self->src);
+	return self->src->done(self->src);
+}
+
+unsigned
+demod_get_size(const Demod *self)
+{
+	return self->src->size(self->src);
 }
 
 float

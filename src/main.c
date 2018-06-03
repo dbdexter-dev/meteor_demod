@@ -21,13 +21,15 @@ main(int argc, char *argv[])
 {
 	int c, free_fname_on_exit;
 	struct timespec timespec;
-	float in_perc, freq;
+	float freq;
+	unsigned in_done, in_total;
 	int pll_locked;
 	Source *raw_samp;
 	Demod *demod;
 
 	/* Command line changeable parameters {{{*/
 	int symbol_rate;
+	unsigned samplerate;
 	int batch_mode;
 	int upd_interval;
 	int quiet;
@@ -39,6 +41,7 @@ main(int argc, char *argv[])
 	/*}}}*/
 	/* Initialize the parameters that can be overridden with command-line args {{{*/
 	batch_mode  = 0;
+	samplerate = 0;
 	quiet = 0;
 	log = tui_print_info;
 	upd_interval = UPD_INTERVAL;
@@ -86,6 +89,9 @@ main(int argc, char *argv[])
 		case 'R':
 			upd_interval = atoi(optarg);
 			break;
+		case 's':
+			samplerate = atoi(optarg);
+			break;
 		case 'v':
 			version();
 			break;
@@ -107,7 +113,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Open raw samples file */
-	raw_samp = open_samples_file(argv[optind]);
+	raw_samp = open_samples_file(argv[optind], samplerate);
 	if (!raw_samp) {
 		fatal("Couldn't open samples file");
 	}
@@ -137,15 +143,16 @@ main(int argc, char *argv[])
 	timespec.tv_nsec = ((upd_interval - timespec.tv_sec*1000))*1000L*1000;
 
 	/* Main UI update loop */
+	in_total = demod_get_size(demod);
 	while (demod_status(demod)) {
-		in_perc = demod_get_perc(demod);
+		in_done = demod_get_done(demod);
 		freq = demod_get_freq(demod);
 		pll_locked = demod_is_pll_locked(demod);
 
 		if (batch_mode) {
 			if (!quiet) {
 				log("(%5.1f%%) Carrier: %+7.1f Hz, Locked: %s\n",
-					in_perc, freq, pll_locked ? "Yes" : "No");
+					(float)in_done/in_total, freq, pll_locked ? "Yes" : "No");
 			}
 			nanosleep(&timespec, NULL);
 		} else {
@@ -153,8 +160,8 @@ main(int argc, char *argv[])
 				/* Exit on user request */
 				break;
 			}
-			tui_update_file_in(wav_get_size(raw_samp), raw_samp->samplerate, in_perc);
-			tui_update_data_out(demod_get_bytes(demod));
+			tui_update_file_in(raw_samp->samplerate, in_done, in_total);
+			tui_update_data_out(demod_get_bytes_out(demod));
 			tui_update_pll(freq, pll_locked);
 			tui_draw_constellation(demod_get_buf(demod), 256);
 		}

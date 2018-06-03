@@ -182,7 +182,7 @@ tui_draw_constellation(const int8_t *dots, unsigned count)
 		x = round(dots[i++]*nc/255);
 		y = round(dots[i]*nr/255);
 
-		prev = mvwinch(tui.iq, y+nr/2, x+nc/2);
+		prev = mvwinch(tui.iq, nr/2-y, x+nc/2);
 		switch(prev) {
 		case '.':
 			waddch(tui.iq, '-');
@@ -203,18 +203,21 @@ tui_draw_constellation(const int8_t *dots, unsigned count)
 
 /* Update the input file info */
 void
-tui_update_file_in(unsigned size, unsigned samplerate, float perc)
+tui_update_file_in(unsigned samplerate, unsigned done, unsigned total)
 {
-	unsigned duration;
+	float perc;
 	char total_duration[sizeof("HH:MM:SS")];
 	char done_duration[sizeof("HH:MM:SS")];
 
 	assert(tui.filein);
 
-	duration = size/samplerate;
+	perc = 100*done/(float)total;
 
-	seconds_to_str(duration, total_duration);
-	seconds_to_str(duration*perc/100, done_duration);
+	total /= samplerate;
+	done /= samplerate;
+
+	seconds_to_str(total, total_duration);
+	seconds_to_str(done, done_duration);
 
 	werase(tui.filein);
 
@@ -263,7 +266,6 @@ tui_deinit()
 {
 	endwin();
 }
-
 
 /* Static functions {{{ */
 /* Print the top banner */

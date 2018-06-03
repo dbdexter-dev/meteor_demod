@@ -15,7 +15,7 @@ int  tui_process_input();
 int  tui_print_info(const char *msg, ...);
 void tui_update_pll(float freq, int islocked);
 void tui_draw_constellation(const int8_t *dots, unsigned count);
-void tui_update_file_in(unsigned size, unsigned rate, float perc);
+void tui_update_file_in(unsigned rate, unsigned done, unsigned duration);
 void tui_update_data_out(unsigned nbytes);
 int  tui_wait_for_user_input();
 

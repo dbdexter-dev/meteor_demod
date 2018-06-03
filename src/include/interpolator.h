@@ -6,7 +6,7 @@
 #ifndef _METEOR_INTERPOLATOR_H
 #define _METEOR_INTERPOLATOR_H
 
-#include "sample.h"
+#include "source.h"
 
 Source* interp_init(Source *src, float alpha, unsigned order, unsigned factor, int sym_rate);
 

@@ -5,7 +5,7 @@
 #define _METEOR_WAVFILE_H
 
 #include <stdint.h>
-#include "sample.h"
+#include "source.h"
 
 struct wave_header
 {
@@ -25,8 +25,6 @@ struct wave_header
 	uint32_t subchunk2_size;
 };
 
-Source* open_samples_file(const char *fname);
-float wav_get_perc(const Source *samp);
-unsigned wav_get_size(const Source *samp);
+Source* open_samples_file(const char *fname, unsigned samplerate);
 
 #endif

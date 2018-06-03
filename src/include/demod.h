@@ -9,7 +9,7 @@
 #include <pthread.h>
 #include "agc.h"
 #include "pll.h"
-#include "sample.h"
+#include "source.h"
 
 /* Costas loop default parameters */
 #define COSTAS_BW 100
@@ -51,8 +51,9 @@ void          demod_join(Demod *self);
 
 int           demod_status(const Demod *self);
 int           demod_is_pll_locked(const Demod *self);
-unsigned      demod_get_bytes(Demod *self);
-float         demod_get_perc(const Demod *self);
+unsigned      demod_get_bytes_out(Demod *self);
+unsigned      demod_get_done(const Demod *self);
+unsigned      demod_get_size(const Demod *self);
 float         demod_get_freq(const Demod *self);
 const int8_t* demod_get_buf(const Demod *self);
 
