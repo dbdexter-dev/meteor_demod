@@ -18,7 +18,7 @@
 
 /* AGC default parameters */
 #define AGC_WINSIZE 1024*32
-#define AGC_TARGET 180
+#define AGC_TARGET 220
 
 /* RRC default parameters, alpha taken from the .grc meteor decode script */
 #define RRC_ALPHA 0.6
@@ -45,16 +45,17 @@ typedef struct {
 	int8_t out_buf[SYM_CHUNKSIZE];
 } Demod;
 
-Demod*        demod_init(Source *src, unsigned interp_factor, unsigned rrc_order, float pll_bw, unsigned sym_rate);
+Demod*        demod_init(Source *src, unsigned interp_factor, unsigned rrc_order, float rrc_alpha, float pll_bw, unsigned sym_rate);
 void          demod_start(Demod *self, const char *fname);
 void          demod_join(Demod *self);
 
 int           demod_status(const Demod *self);
 int           demod_is_pll_locked(const Demod *self);
 unsigned      demod_get_bytes_out(Demod *self);
-unsigned      demod_get_done(const Demod *self);
-unsigned      demod_get_size(const Demod *self);
+uint64_t      demod_get_done(const Demod *self);
+uint64_t      demod_get_size(const Demod *self);
 float         demod_get_freq(const Demod *self);
-const int8_t* demod_get_buf(const Demod *self);
+float         demod_get_gain(const Demod *self);
+const int8_t* const demod_get_buf(const Demod *self);
 
 #endif

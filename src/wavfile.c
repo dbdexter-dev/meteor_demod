@@ -8,15 +8,15 @@
 
 typedef struct {
 	FILE *fd;
-	size_t total_samples;
-	size_t samples_read;
+	uint64_t total_samples;
+	uint64_t samples_read;
 	int16_t *tmp;
 } WavState;
 
 static int      wav_read(Source *samp, size_t count);
 static int      wav_close(Source *samp);
-static unsigned wav_get_size(const Source *samp);
-static unsigned wav_get_done(const Source *samp);
+static uint64_t wav_get_size(const Source *samp);
+static uint64_t wav_get_done(const Source *samp);
 
 extern int errno;
 
@@ -55,7 +55,6 @@ open_samples_file(const char *fname, unsigned samplerate)
 			state->total_samples = _header.subchunk2_size / _header.num_channels / samp->bps;
 		} else {
 			fprintf(stderr, "Warning: input file is not a valid .wav, assuming raw 16 bit data\n");
-
 			if (!samplerate) {
 				fatal("Please specify an input samplerate (-s <samplerate>)");
 				/* Not reached */
@@ -78,14 +77,15 @@ open_samples_file(const char *fname, unsigned samplerate)
 }
 
 /* Return how for into the file we are */
-unsigned
+uint64_t
 wav_get_done(const Source *self)
 {
 	const WavState* state = self->_backend;
 	return state->samples_read;
 }
 
-unsigned
+/* Return how big the file is */
+uint64_t
 wav_get_size(const Source *self)
 {
 	const WavState* state = self->_backend;

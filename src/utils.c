@@ -89,13 +89,12 @@ usage(const char *pname)
 	        "\n"
 	        "Advanced options:\n"
 	        "   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)\n"
+	        "   -a, --alpha <alpha>     Set the RRC filter alpha to <alpha> (default: 0.6)\n"
 	        "   -f, --fir-order <ord>   Set the RRC filter order to <ord> (default: 64)\n"
 	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 4)\n"
 	        "\n"
 	        "   -h, --help              Print this help screen\n"
 	        "   -v, --version           Print version info\n"
-	        "\n"
-			"If file_in is -, read from stdin\n"
 	        );
 	exit(0);
 }

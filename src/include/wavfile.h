@@ -1,5 +1,6 @@
 /**
- * Basic functions and structs to deal with I/Q samples coming from a .wav file.
+ * Basic functions and structs to deal with I/Q samples coming from a .wav file,
+ * as well as raw I/Q recordings like those coming from rtl_fm.
  */
 #ifndef _METEOR_WAVFILE_H
 #define _METEOR_WAVFILE_H

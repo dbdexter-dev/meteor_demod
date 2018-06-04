@@ -8,6 +8,7 @@
 #include "tui.h"
 #include "utils.h"
 
+/* Saved for when we want to wait indefinitely for user input */
 static unsigned _upd_interval;
 
 enum {
@@ -51,7 +52,7 @@ tui_init(unsigned upd_interval)
 
 	windows_init(rows, cols);
 	print_banner(tui.banner_top);
-	tui_update_pll(0, 0);
+	tui_update_pll(0, 0, 1);
 	iq_draw_quadrants(tui.iq);
 }
 
@@ -94,7 +95,7 @@ tui_handle_resize()
 
 /* Get user input, return 1 if an abort was requested, 0 otherwise. This also
  * doubles as a throttling for the refresh rate, since wgetch() blocks for
- * UPD_INTERVAL milliseconds before returning if no key is pressed */
+ * upd_interval milliseconds before returning if no key is pressed */
 int
 tui_process_input()
 {
@@ -140,7 +141,7 @@ tui_print_info(const char *msg, ...)
 
 /* Update the PLL info displayed */
 void
-tui_update_pll(float freq, int islocked)
+tui_update_pll(float freq, int islocked, float gain)
 {
 	assert(tui.pll);
 
@@ -149,8 +150,8 @@ tui_update_pll(float freq, int islocked)
 	wattrset(tui.pll, A_BOLD);
 	wprintw(tui.pll, "PLL info\n");
 	wattroff(tui.pll, A_BOLD);
-	wprintw(tui.pll, "Carrier Freq\tStatus\n");
-	wprintw(tui.pll, "%+7.1f Hz\t", freq);
+	wprintw(tui.pll, "Gain\tCarrier Freq\tStatus\n");
+	wprintw(tui.pll, "%.3f\t%+7.1f Hz\t", gain, freq);
 	if (islocked) {
 		wattrset(tui.pll, COLOR_PAIR(PAIR_GREEN_DEF));
 		wprintw(tui.pll, "%s", "Locked");
@@ -203,7 +204,7 @@ tui_draw_constellation(const int8_t *dots, unsigned count)
 
 /* Update the input file info */
 void
-tui_update_file_in(unsigned samplerate, unsigned done, unsigned total)
+tui_update_file_in(unsigned samplerate, uint64_t done, uint64_t total)
 {
 	float perc;
 	char total_duration[sizeof("HH:MM:SS")];
@@ -211,7 +212,7 @@ tui_update_file_in(unsigned samplerate, unsigned done, unsigned total)
 
 	assert(tui.filein);
 
-	perc = 100*done/(float)total;
+	perc = (done/(float)total)*100;
 
 	total /= samplerate;
 	done /= samplerate;

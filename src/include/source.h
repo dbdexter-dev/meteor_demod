@@ -7,6 +7,7 @@
 #define _METEOR_SOURCE_H
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <complex.h>
 
 typedef struct sample {
@@ -16,8 +17,8 @@ typedef struct sample {
 	float complex *data;
 	int (*read)(struct sample *, size_t);
 	int (*close)(struct sample *);
-	unsigned (*size)(const struct sample *);
-	unsigned (*done)(const struct sample *);
+	uint64_t (*size)(const struct sample *);
+	uint64_t (*done)(const struct sample *);
 	void *_backend;     /* Opaque pointer to stuff used by read() and close() */
 } Source;
 

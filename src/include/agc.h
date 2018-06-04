@@ -6,7 +6,7 @@
 
 #include <complex.h>
 
-#define AGC_MAX_GAIN 3
+#define AGC_MAX_GAIN 5
 
 typedef struct {
 	unsigned window_size;

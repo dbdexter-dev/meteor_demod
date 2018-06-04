@@ -13,6 +13,7 @@
 /* Default values */
 #define SYM_RATE 72000
 #define SLEEP_INTERVAL 5000
+#define UPD_INTERVAL 50
 
 static int stdout_print_info(const char *msg, ...);
 
@@ -21,8 +22,8 @@ main(int argc, char *argv[])
 {
 	int c, free_fname_on_exit;
 	struct timespec timespec;
-	float freq;
-	unsigned in_done, in_total;
+	float freq, gain;
+	uint64_t in_done, in_total;
 	int pll_locked;
 	Source *raw_samp;
 	Demod *demod;
@@ -34,6 +35,7 @@ main(int argc, char *argv[])
 	int upd_interval;
 	int quiet;
 	float costas_bw;
+	float rrc_alpha;
 	unsigned interp_factor;
 	unsigned rrc_order;
 	char *out_fname;
@@ -41,6 +43,7 @@ main(int argc, char *argv[])
 	/*}}}*/
 	/* Initialize the parameters that can be overridden with command-line args {{{*/
 	batch_mode  = 0;
+	rrc_alpha = RRC_ALPHA;
 	samplerate = 0;
 	quiet = 0;
 	log = tui_print_info;
@@ -60,6 +63,9 @@ main(int argc, char *argv[])
 	optind = 0;
 	while ((c = getopt_long(argc, argv, SHORTOPTS, longopts, NULL)) != -1) {
 		switch (c) {
+		case 'a':
+			rrc_alpha = atof(optarg);
+			break;
 		case 'b':
 			costas_bw = atoi(optarg);
 			break;
@@ -126,13 +132,12 @@ main(int argc, char *argv[])
 	}
 
 	if (!quiet) {
-		log("Will read from %s\n", argv[optind]);
-		log("Will output to %s\n", out_fname);
-		log("Interpolation factor: %d, RRC filter order: %d\n", interp_factor, rrc_order);
+		log("Input: %s, output: %s\n", argv[optind], out_fname);
+		log("Input samplerate: %d\n", raw_samp->samplerate);
 	}
 
 	/* Initialize the demodulator */
-	demod = demod_init(raw_samp, interp_factor, rrc_order, costas_bw, symbol_rate);
+	demod = demod_init(raw_samp, interp_factor, rrc_order, rrc_alpha, costas_bw, symbol_rate);
 	demod_start(demod, out_fname);
 	if (!quiet) {
 		log("Demodulator initialized\n");
@@ -147,6 +152,7 @@ main(int argc, char *argv[])
 	while (demod_status(demod)) {
 		in_done = demod_get_done(demod);
 		freq = demod_get_freq(demod);
+		gain = demod_get_gain(demod);
 		pll_locked = demod_is_pll_locked(demod);
 
 		if (batch_mode) {
@@ -162,7 +168,7 @@ main(int argc, char *argv[])
 			}
 			tui_update_file_in(raw_samp->samplerate, in_done, in_total);
 			tui_update_data_out(demod_get_bytes_out(demod));
-			tui_update_pll(freq, pll_locked);
+			tui_update_pll(freq, pll_locked, gain);
 			tui_draw_constellation(demod_get_buf(demod), 256);
 		}
 	}

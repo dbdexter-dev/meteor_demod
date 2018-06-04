@@ -6,8 +6,8 @@
 
 static int      interp_read(Source *self, size_t count);
 static int      interp_free(Source *self);
-static unsigned interp_get_done(const Source *self);
-static unsigned interp_get_size(const Source *self);
+static uint64_t interp_get_done(const Source *self);
+static uint64_t interp_get_size(const Source *self);
 
 typedef struct {
 	Source *src;
@@ -46,7 +46,7 @@ interp_init(Source* src, float alpha, unsigned order, unsigned factor, int sym_r
 /* Static functions {{{ */
 /* Wrapper to interpolate the source data and provide a transparent translation
  * layer between the raw samples and the interpolated samples */
-unsigned
+uint64_t
 interp_get_size(const Source *self)
 {
 	InterpState *state;
@@ -54,7 +54,7 @@ interp_get_size(const Source *self)
 	return state->src->size(state->src);
 }
 
-unsigned
+uint64_t
 interp_get_done(const Source *self)
 {
 	InterpState *state;

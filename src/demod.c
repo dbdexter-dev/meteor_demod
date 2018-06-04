@@ -16,7 +16,7 @@ typedef struct {
 static void* demod_thr_run(void* args);
 
 Demod*
-demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float pll_bw, unsigned sym_rate)
+demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float rrc_alpha, float pll_bw, unsigned sym_rate)
 {
 	Demod *ret;
 
@@ -28,7 +28,7 @@ demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float pll_bw, 
 	ret->agc = agc_init(AGC_TARGET, AGC_WINSIZE);
 
 	/* Initialize the interpolator, associating raw_samp to it */
-	ret->interp = interp_init(src, RRC_ALPHA, rrc_order, interp_mult, sym_rate);
+	ret->interp = interp_init(src, rrc_alpha, rrc_order, interp_mult, sym_rate);
 	/* Discard the first null samples */
 	ret->interp->read(ret->interp, rrc_order*interp_mult);
 
@@ -83,13 +83,13 @@ demod_get_bytes_out(Demod *self)
 	return ret;
 }
 
-unsigned
+uint64_t
 demod_get_done(const Demod *self)
 {
 	return self->src->done(self->src);
 }
 
-unsigned
+uint64_t
 demod_get_size(const Demod *self)
 {
 	return self->src->size(self->src);
@@ -101,8 +101,14 @@ demod_get_freq(const Demod *self)
 	return self->cst->nco_freq*self->sym_rate/(2*M_PI);
 }
 
+float
+demod_get_gain(const Demod *self)
+{
+	return self->agc->gain;
+}
+
 /* XXX not thread-safe */
-const int8_t*
+const int8_t* const
 demod_get_buf(const Demod *self)
 {
 	return self->out_buf;
