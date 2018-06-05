@@ -11,9 +11,10 @@ typedef struct {
 	float avg;
 	float gain;
 	float target_ampl;
+	float complex bias;
 } Agc;
 
-Agc*          agc_init(float target_ampl, unsigned window_size);
+Agc*          agc_init();
 float complex agc_apply(Agc *agc, float complex sampl);
 void          agc_free(Agc *agc);
 

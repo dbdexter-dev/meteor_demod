@@ -8,20 +8,22 @@
 
 typedef struct {
 	FILE *fd;
-	size_t total_samples;
-	size_t samples_read;
-	short *tmp;
+	uint64_t total_samples;
+	uint64_t samples_read;
+	int16_t *tmp;
 } WavState;
 
-static int wav_read(Sample *samp, size_t count);
-static int wav_close(Sample *samp);
+static int      wav_read(Source *samp, size_t count);
+static int      wav_close(Source *samp);
+static uint64_t wav_get_size(const Source *samp);
+static uint64_t wav_get_done(const Source *samp);
 
 extern int errno;
 
-Sample*
-open_samples_file(const char *fname)
+Source*
+open_samples_file(const char *fname, unsigned samplerate)
 {
-	Sample *samp;
+	Source *samp;
 	WavState *state;
 	struct wave_header _header;
 	FILE *fd;
@@ -35,27 +37,38 @@ open_samples_file(const char *fname)
 
 		assert(fread(&_header, sizeof(struct wave_header), 1, state->fd));
 
+		samp->count = 0;
+		samp->data = NULL;
+		samp->read = wav_read;
+		samp->close = wav_close;
+		samp->size = wav_get_size;
+		samp->done = wav_get_done;
+
 		/* If any of these comparisons return non-zero, the file is
-		 * not a valid WAVE file: abort */
+		 * not a valid WAVE file: assume raw data */
 		if (!strncmp(_header._riff, "RIFF", 4) &&
 			!strncmp(_header._filetype, "WAVE", 4) &&
 			!strncmp(_header._data, "data", 4)) {
-			samp->count = 0;
-			samp->samplerate = _header.sample_rate;
-			samp->data = NULL;
+			samp->samplerate = (samplerate ? samplerate : _header.sample_rate);
 			samp->bps = _header.bits_per_sample/8;
-			samp->read = wav_read;
-			samp->close = wav_close;
+
 			state->total_samples = _header.subchunk2_size / _header.num_channels / samp->bps;
-			state->samples_read = 0;
-			state->tmp = safealloc(2*sizeof(state->tmp));
 		} else {
-			fatal("Invalid .wav file specified");
-			/* Not reached */
-			return NULL;
+			fprintf(stderr, "Warning: input file is not a valid .wav, assuming raw 16 bit data\n");
+			if (!samplerate) {
+				fatal("Please specify an input samplerate (-s <samplerate>)");
+				/* Not reached */
+				return NULL;
+			}
+
+			samp->samplerate = samplerate;
+			samp->bps = 2;
+			state->total_samples = 0;
 		}
+		state->samples_read = 0;
+		state->tmp = safealloc(2*sizeof(state->tmp));
 	} else {
-		fatal("Could not find specified .wav file");
+		fatal("Could not find specified file");
 		/* Not reached */
 		return NULL;
     }
@@ -63,10 +76,27 @@ open_samples_file(const char *fname)
 	return samp;
 }
 
+/* Return how for into the file we are */
+uint64_t
+wav_get_done(const Source *self)
+{
+	const WavState* state = self->_backend;
+	return state->samples_read;
+}
+
+/* Return how big the file is */
+uint64_t
+wav_get_size(const Source *self)
+{
+	const WavState* state = self->_backend;
+	return state->total_samples;
+}
+
+/* Static functions {{{ */
 /* Read $count samples from the opened file, populating the data[] array as
  * expected. */
 int
-wav_read(Sample *self, size_t count)
+wav_read(Source *self, size_t count)
 {
 	WavState *state;
 	int i;
@@ -82,7 +112,7 @@ wav_read(Sample *self, size_t count)
 
 	self->count = count;
 
-	/* Convert samples (aka uint16_t) to complex numbers */
+	/* Convert samples (aka int16_t) to complex numbers */
 	for (i=0; i<count; i++) {
 		if (fread(state->tmp, self->bps, 2, state->fd) > 0) {
 			self->data[i] = state->tmp[0] + state->tmp[1] * I;
@@ -97,25 +127,10 @@ wav_read(Sample *self, size_t count)
 	return i;
 }
 
-/* Return how for into the file we are */
-float
-wav_get_perc(const Sample *self)
-{
-	const WavState* state = self->_backend;
-	return (float)state->samples_read/state->total_samples*100;
-}
-
-unsigned
-wav_get_size(const Sample *self)
-{
-	const WavState* state = self->_backend;
-	return state->total_samples;
-}
-
 /* Close the .wav file descriptor and free the memory associated with this
- * Sample object */
+ * Source object */
 int
-wav_close(Sample *self)
+wav_close(Source *self)
 {
 	WavState *state;
 
@@ -128,3 +143,4 @@ wav_close(Sample *self)
 	free(self);
 	return 0;
 }
+/*}}}*/

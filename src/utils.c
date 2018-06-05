@@ -81,13 +81,15 @@ usage(const char *pname)
 	fprintf(stderr, "Usage: %s [options] file_in\n", pname);
 	fprintf(stderr,
 	        "   -o, --output <file>     Output decoded symbols to <file>\n"
-	        "   -r, --rate <rate>       Set the symbol rate to <rate> (default: 72000)\n"
+	        "   -r, --symrate <rate>    Set the symbol rate to <rate> (default: 72000)\n"
+	        "   -s, --samplerate <samp> Force the input samplerate to <samp> (default: auto)\n"
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50ms in TUI mode, 5000ms in batch mode)\n"
 	        "   -B, --batch             Do not use ncurses, write the message log to stdout instead\n"
 	        "   -q, --quiet             Do not print status information\n"
 	        "\n"
 	        "Advanced options:\n"
 	        "   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)\n"
+	        "   -a, --alpha <alpha>     Set the RRC filter alpha to <alpha> (default: 0.6)\n"
 	        "   -f, --fir-order <ord>   Set the RRC filter order to <ord> (default: 64)\n"
 	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 4)\n"
 	        "\n"

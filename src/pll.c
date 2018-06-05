@@ -4,7 +4,7 @@
 #include "tui.h"
 #include "utils.h"
 
-#define FREQ_MAX 0.5
+#define FREQ_MAX 0.8
 #define AVG_WINSIZE 40000
 
 static float costas_compute_delta(float i_branch, float q_branch);
@@ -13,19 +13,19 @@ inline float lut_tanh(float val);
 
 /* Initialize a Costas loop for carrier frequency/phase recovery */
 Costas*
-costas_init(float freq, float damping, float bw)
+costas_init(float bw)
 {
 	int i;
 	Costas *costas;
 
 	costas = safealloc(sizeof(*costas));
 
-	costas->nco_freq = freq;
+	costas->nco_freq = COSTAS_INIT_FREQ;
 	costas->nco_phase = 0;
 
-	costas_recompute_coeffs(costas, damping, bw);
+	costas_recompute_coeffs(costas, COSTAS_DAMP, bw);
 
-	costas->damping = damping;
+	costas->damping = COSTAS_DAMP;
 	costas->bw = bw;
 
 	costas->moving_avg = 1;
@@ -65,13 +65,13 @@ costas_resync(Costas *self, float complex samp)
 	self->nco_freq = self->nco_freq + self->beta*error;
 
 	if (self->nco_freq <= -FREQ_MAX) {
-		self->nco_freq = FREQ_MAX;
+		self->nco_freq = -FREQ_MAX/2;
 	} else if (self->nco_freq >= FREQ_MAX) {
-		self->nco_freq = -FREQ_MAX;
+		self->nco_freq = FREQ_MAX/2;
 	}
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
-	if (!self->locked && self->moving_avg < 0.0025) {
+	if (!self->locked && self->moving_avg < 0.002) {
 		costas_recompute_coeffs(self, self->damping, self->bw/2);
 		self->locked = 1;
 	} else if (self->locked && self->moving_avg > 0.025) {

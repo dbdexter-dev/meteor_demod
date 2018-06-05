@@ -1,11 +1,12 @@
 /**
- * Basic functions and structs to deal with I/Q samples coming from a .wav file.
+ * Basic functions and structs to deal with I/Q samples coming from a .wav file,
+ * as well as raw I/Q recordings like those coming from rtl_fm.
  */
 #ifndef _METEOR_WAVFILE_H
 #define _METEOR_WAVFILE_H
 
 #include <stdint.h>
-#include "sample.h"
+#include "source.h"
 
 struct wave_header
 {
@@ -25,9 +26,6 @@ struct wave_header
 	uint32_t subchunk2_size;
 };
 
-
-Sample* open_samples_file(const char *fname);
-float wav_get_perc(const Sample *samp);
-unsigned wav_get_size(const Sample *samp);
+Source* open_samples_file(const char *fname, unsigned samplerate);
 
 #endif

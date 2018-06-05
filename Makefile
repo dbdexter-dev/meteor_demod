@@ -1,4 +1,4 @@
-VERSION=\"0.1b\"
+VERSION=\"0.2\"
 
 export CFLAGS += -pipe -march=native -Wall -std=c99 -pedantic -D_XOPEN_SOURCE=700 -DVERSION=${VERSION}
 export LDFLAGS +=
@@ -10,7 +10,8 @@ default: release
 
 debug: CFLAGS += -g -D__DEBUG -Werror
 debug: src
-release: CFLAGS += -O2 -ffast-math -flto -ftree-vectorize
+release: CFLAGS += -O2 -ffast-math -flto
+release: LDFLAGS += -flto
 release: src
 
 src:

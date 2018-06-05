@@ -8,6 +8,7 @@
 #include "tui.h"
 #include "utils.h"
 
+/* Saved for when we want to wait indefinitely for user input */
 static unsigned _upd_interval;
 
 enum {
@@ -51,7 +52,7 @@ tui_init(unsigned upd_interval)
 
 	windows_init(rows, cols);
 	print_banner(tui.banner_top);
-	tui_update_pll(0, 0);
+	tui_update_pll(0, 0, 1);
 	iq_draw_quadrants(tui.iq);
 }
 
@@ -94,7 +95,7 @@ tui_handle_resize()
 
 /* Get user input, return 1 if an abort was requested, 0 otherwise. This also
  * doubles as a throttling for the refresh rate, since wgetch() blocks for
- * UPD_INTERVAL milliseconds before returning if no key is pressed */
+ * upd_interval milliseconds before returning if no key is pressed */
 int
 tui_process_input()
 {
@@ -140,7 +141,7 @@ tui_print_info(const char *msg, ...)
 
 /* Update the PLL info displayed */
 void
-tui_update_pll(float freq, int islocked)
+tui_update_pll(float freq, int islocked, float gain)
 {
 	assert(tui.pll);
 
@@ -149,8 +150,8 @@ tui_update_pll(float freq, int islocked)
 	wattrset(tui.pll, A_BOLD);
 	wprintw(tui.pll, "PLL info\n");
 	wattroff(tui.pll, A_BOLD);
-	wprintw(tui.pll, "Carrier Freq\tStatus\n");
-	wprintw(tui.pll, "%+7.1f Hz\t", freq);
+	wprintw(tui.pll, "Gain\tCarrier Freq\tStatus\n");
+	wprintw(tui.pll, "%.3f\t%+7.1f Hz\t", gain, freq);
 	if (islocked) {
 		wattrset(tui.pll, COLOR_PAIR(PAIR_GREEN_DEF));
 		wprintw(tui.pll, "%s", "Locked");
@@ -182,7 +183,7 @@ tui_draw_constellation(const int8_t *dots, unsigned count)
 		x = round(dots[i++]*nc/255);
 		y = round(dots[i]*nr/255);
 
-		prev = mvwinch(tui.iq, y+nr/2, x+nc/2);
+		prev = mvwinch(tui.iq, nr/2-y, x+nc/2);
 		switch(prev) {
 		case '.':
 			waddch(tui.iq, '-');
@@ -203,18 +204,21 @@ tui_draw_constellation(const int8_t *dots, unsigned count)
 
 /* Update the input file info */
 void
-tui_update_file_in(unsigned size, unsigned samplerate, float perc)
+tui_update_file_in(unsigned samplerate, uint64_t done, uint64_t total)
 {
-	unsigned duration;
+	float perc;
 	char total_duration[sizeof("HH:MM:SS")];
 	char done_duration[sizeof("HH:MM:SS")];
 
 	assert(tui.filein);
 
-	duration = size/samplerate;
+	perc = (done/(float)total)*100;
 
-	seconds_to_str(duration, total_duration);
-	seconds_to_str(duration*perc/100, done_duration);
+	total /= samplerate;
+	done /= samplerate;
+
+	seconds_to_str(total, total_duration);
+	seconds_to_str(done, done_duration);
 
 	werase(tui.filein);
 
@@ -263,7 +267,6 @@ tui_deinit()
 {
 	endwin();
 }
-
 
 /* Static functions {{{ */
 /* Print the top banner */

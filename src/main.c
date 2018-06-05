@@ -10,9 +10,24 @@
 #include "utils.h"
 #include "wavfile.h"
 
-/* Default values */
+/* Default values #defines {{{ */
+/* Default symbol rate */
 #define SYM_RATE 72000
+
+/* Default update intervals */
 #define SLEEP_INTERVAL 5000
+#define UPD_INTERVAL 50
+
+/* Costas loop default parameters */
+#define COSTAS_BW 100
+
+/* RRC default parameters, alpha taken from the .grc meteor decode script */
+#define RRC_ALPHA 0.6
+#define RRC_FIR_ORDER 64
+
+/* Interpolator default options */
+#define INTERP_FACTOR 4
+/*}}}*/
 
 static int stdout_print_info(const char *msg, ...);
 
@@ -21,26 +36,29 @@ main(int argc, char *argv[])
 {
 	int c, free_fname_on_exit;
 	struct timespec timespec;
-	float in_perc, freq;
+	float freq, gain;
+	uint64_t in_done, in_total;
 	int pll_locked;
-	Sample *raw_samp;
+	Source *raw_samp;
 	Demod *demod;
-	int (*log)(const char *msg, ...);
 
 	/* Command line changeable parameters {{{*/
 	int symbol_rate;
+	unsigned samplerate;
 	int batch_mode;
 	int upd_interval;
 	int quiet;
 	float costas_bw;
+	float rrc_alpha;
 	unsigned interp_factor;
 	unsigned rrc_order;
 	char *out_fname;
+	int (*log)(const char *msg, ...);
 	/*}}}*/
-	/* Argument handling {{{ */
-
-	/* Initialize the parameters that can be overridden with command-line args */
+	/* Initialize the parameters that can be overridden with command-line args {{{*/
 	batch_mode  = 0;
+	rrc_alpha = RRC_ALPHA;
+	samplerate = 0;
 	quiet = 0;
 	log = tui_print_info;
 	upd_interval = UPD_INTERVAL;
@@ -50,15 +68,18 @@ main(int argc, char *argv[])
 	interp_factor = INTERP_FACTOR;
 	rrc_order = RRC_FIR_ORDER;
 	free_fname_on_exit = 0;
-
+	/* }}} */
+	/* Parse command line args {{{*/
 	if (argc < 2) {
 		usage(argv[0]);
 	}
 
-	/* Parse command line args */
 	optind = 0;
 	while ((c = getopt_long(argc, argv, SHORTOPTS, longopts, NULL)) != -1) {
 		switch (c) {
+		case 'a':
+			rrc_alpha = atof(optarg);
+			break;
 		case 'b':
 			costas_bw = atoi(optarg);
 			break;
@@ -88,6 +109,9 @@ main(int argc, char *argv[])
 		case 'R':
 			upd_interval = atoi(optarg);
 			break;
+		case 's':
+			samplerate = atoi(optarg);
+			break;
 		case 'v':
 			version();
 			break;
@@ -96,10 +120,12 @@ main(int argc, char *argv[])
 		}
 	}
 
+	/* Check if input filename was provided */
 	if (argc - optind < 1) {
 		usage(argv[0]);
 	}
 	/*}}}*/
+
 	/* If no filename was specified, generate one */
 	if (!out_fname) {
 		out_fname = gen_fname();
@@ -107,7 +133,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Open raw samples file */
-	raw_samp = open_samples_file(argv[optind]);
+	raw_samp = open_samples_file(argv[optind], samplerate);
 	if (!raw_samp) {
 		fatal("Couldn't open samples file");
 	}
@@ -120,31 +146,33 @@ main(int argc, char *argv[])
 	}
 
 	if (!quiet) {
-		log("Will read from %s\n", argv[optind]);
-		log("Will output to %s\n", out_fname);
-		log("Interpolation factor: %d, RRC filter order: %d\n", interp_factor, rrc_order);
+		log("Input: %s, output: %s\n", argv[optind], out_fname);
+		log("Input samplerate: %d\n", raw_samp->samplerate);
 	}
 
 	/* Initialize the demodulator */
-	demod = demod_init(raw_samp, interp_factor, rrc_order, costas_bw, symbol_rate);
+	demod = demod_init(raw_samp, interp_factor, rrc_order, rrc_alpha, costas_bw, symbol_rate);
 	demod_start(demod, out_fname);
 	if (!quiet) {
 		log("Demodulator initialized\n");
 	}
 
+	/* Initialize the struct that will be the argument to nanosleep() */
 	timespec.tv_sec = upd_interval/1000;
 	timespec.tv_nsec = ((upd_interval - timespec.tv_sec*1000))*1000L*1000;
 
 	/* Main UI update loop */
+	in_total = demod_get_size(demod);
 	while (demod_status(demod)) {
-		in_perc = demod_get_perc(demod);
+		in_done = demod_get_done(demod);
 		freq = demod_get_freq(demod);
+		gain = demod_get_gain(demod);
 		pll_locked = demod_is_pll_locked(demod);
 
 		if (batch_mode) {
 			if (!quiet) {
 				log("(%5.1f%%) Carrier: %+7.1f Hz, Locked: %s\n",
-					in_perc, freq, pll_locked ? "Yes" : "No");
+					(float)in_done/in_total, freq, pll_locked ? "Yes" : "No");
 			}
 			nanosleep(&timespec, NULL);
 		} else {
@@ -152,12 +180,13 @@ main(int argc, char *argv[])
 				/* Exit on user request */
 				break;
 			}
-			tui_update_file_in(wav_get_size(raw_samp), raw_samp->samplerate, in_perc);
-			tui_update_data_out(demod_get_bytes(demod));
-			tui_update_pll(freq, pll_locked);
+			tui_update_file_in(raw_samp->samplerate, in_done, in_total);
+			tui_update_data_out(demod_get_bytes_out(demod));
+			tui_update_pll(freq, pll_locked, gain);
 			tui_draw_constellation(demod_get_buf(demod), 256);
 		}
 	}
+
 	if (!quiet) {
 		if (!demod_status(demod)) {
 			log("Decoding completed\n");

@@ -28,9 +28,8 @@ filter_new(unsigned fwd_count, unsigned back_count, ...)
 		/* Initialize the filter memory nodes and forward coefficients */
 		fwd_coeff = va_arg(flt_parm, double*);
 		flt->fwd_coeff = safealloc(sizeof(*flt->fwd_coeff) * fwd_count);
-		flt->mem = safealloc(sizeof(*flt->mem) * fwd_count);
+		flt->mem = calloc(sizeof(*flt->mem), fwd_count);
 		for (i=0; i<fwd_count; i++) {
-			flt->mem[i] = 0;
 			flt->fwd_coeff[i] = (float)fwd_coeff[i];
 		}
 
@@ -92,6 +91,7 @@ filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 	taps = order*2+1;
 
 	coeffs = safealloc(sizeof(*coeffs) * taps);
+	/* Compute the filter coefficients */
 	for (i=0; i<taps; i++) {
 		coeffs[i] = compute_rrc_coeff(i, taps, osf*factor, alpha);
 	}
