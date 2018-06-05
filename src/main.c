@@ -10,10 +10,24 @@
 #include "utils.h"
 #include "wavfile.h"
 
-/* Default values */
+/* Default values #defines {{{ */
+/* Default symbol rate */
 #define SYM_RATE 72000
+
+/* Default update intervals */
 #define SLEEP_INTERVAL 5000
 #define UPD_INTERVAL 50
+
+/* Costas loop default parameters */
+#define COSTAS_BW 100
+
+/* RRC default parameters, alpha taken from the .grc meteor decode script */
+#define RRC_ALPHA 0.6
+#define RRC_FIR_ORDER 64
+
+/* Interpolator default options */
+#define INTERP_FACTOR 4
+/*}}}*/
 
 static int stdout_print_info(const char *msg, ...);
 

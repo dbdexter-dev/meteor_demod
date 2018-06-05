@@ -25,7 +25,7 @@ demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float rrc_alph
 	ret->src = src;
 
 	/* Initialize the AGC */
-	ret->agc = agc_init(AGC_TARGET, AGC_WINSIZE);
+	ret->agc = agc_init();
 
 	/* Initialize the interpolator, associating raw_samp to it */
 	ret->interp = interp_init(src, rrc_alpha, rrc_order, interp_mult, sym_rate);
@@ -34,7 +34,7 @@ demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float rrc_alph
 
 	/* Initialize Costas loop */
 	pll_bw = 2*M_PI*pll_bw/sym_rate;
-	ret->cst = costas_init(COSTAS_INIT_FREQ, COSTAS_DAMP, pll_bw);
+	ret->cst = costas_init(pll_bw);
 
 	/* Initialize the timing recovery variables */
 	ret->sym_rate = sym_rate;

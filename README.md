@@ -49,18 +49,39 @@ and the interpolation factor by the same proportion (i.e. multiply them by the
 same amount).
 
 
-### Live decoding
+## Live decoding
 
-This branch supports experimental live decoding with the help of rtl\_fm. First,
-you need to create a named pipe; then, you can feed the raw samples from rtl\_fm
-into it, and tell meteor\_demod to read from it. Here's a way to do it:
+Meteor\_demod now supports live decoding with the help of rtl\_fm! Here's how
+to get it working:
+
+First off, you need to create a named pipe. This is simply what the name implies:
+a pipe for data. You send data in from one side, and it comes out from the
+other. It's going to be used to let rtl\_fm and meteor\_demod exchange samples:
 ```
 mkfifo /tmp/meteor_iq
-meteor_demod -s 140000 /tmp/meteor_iq
-(in another shell) rtl_fm -M raw -s 140000 -f 137.9M -E dc -g <gain> -p <ppm> /tmp/meteor_iq
 ```
-Once the pass is over, you can delete the named pipe as if it were a
-regular file: `rm /tmp/meteor_iq`
+Then, you can start up meteor\_demod, telling it to read the raw samples from
+this pipe.  Note the `-s` flag; it *must* be passed because the stream coming from
+rtl\_fm doesn't specify a sampling rate, so you need to set it manually:
+```
+meteor_demod -s 140000 /tmp/meteor_iq
+```
+This command will seem to hang, but that's expected. The pipe doesn't open
+until both the sender and the receiver are connected to it.
+
+So finally, you can start up rtl\_fm to capture the live data and send the raw IQ
+stream into the named pipe. Open another terminal and type in:
+```
+rtl_fm -M raw -s 140000 -f 137.9M -E dc -g <gain> -p <ppm> /tmp/meteor_iq
+```
+At this point, meteor\_demod's ui should pop up inside the first terminal, and
+the constellation diagram should stabilize within 10~15 seconds.
+
+Once the pass is over, stop the decoding by pressing `q`: rtl\_fm will terminate
+as well. The named pipe can now be deleted as if it were any other regular file:
+```
+rm /tmp/meteor_iq
+```
 
 You can experiment with the sampling rate, as long as you make sure both rtl\_fm
 and meteor\_demod are using the same rate.

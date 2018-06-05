@@ -11,22 +11,6 @@
 #include "pll.h"
 #include "source.h"
 
-/* Costas loop default parameters */
-#define COSTAS_BW 100
-#define COSTAS_DAMP 1/M_SQRT2
-#define COSTAS_INIT_FREQ 0.001
-
-/* AGC default parameters */
-#define AGC_WINSIZE 1024*32
-#define AGC_TARGET 220
-
-/* RRC default parameters, alpha taken from the .grc meteor decode script */
-#define RRC_ALPHA 0.6
-#define RRC_FIR_ORDER 64
-
-/* Interpolator default options */
-#define INTERP_FACTOR 4
-
 /* I/O chunk sizes */
 #define CHUNKSIZE 32768
 #define SYM_CHUNKSIZE 1024
