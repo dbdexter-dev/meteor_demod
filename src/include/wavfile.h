@@ -2,8 +2,8 @@
  * Basic functions and structs to deal with I/Q samples coming from a .wav file,
  * as well as raw I/Q recordings like those coming from rtl_fm.
  */
-#ifndef _METEOR_WAVFILE_H
-#define _METEOR_WAVFILE_H
+#ifndef METEOR_WAVFILE_H
+#define METEOR_WAVFILE_H
 
 #include <stdint.h>
 #include "source.h"

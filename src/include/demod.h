@@ -3,8 +3,8 @@
  * process the incoming samples, so it'll interpolate and resample them,
  * normalize their amplitude, recover the carrier, and write the decoded symbols
  * to disk */
-#ifndef _METEOR_DEMOD_H
-#define _METEOR_DEMOD_H
+#ifndef METEOR_DEMOD_H
+#define METEOR_DEMOD_H
 
 #include <pthread.h>
 #include "agc.h"
@@ -40,6 +40,6 @@ uint64_t      demod_get_done(const Demod *self);
 uint64_t      demod_get_size(const Demod *self);
 float         demod_get_freq(const Demod *self);
 float         demod_get_gain(const Demod *self);
-const int8_t* const demod_get_buf(const Demod *self);
+const int8_t* demod_get_buf(const Demod *self);
 
 #endif

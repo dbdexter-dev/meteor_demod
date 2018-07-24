@@ -1,8 +1,8 @@
 /**
  * All accepted short and long command-line flags are defined here
  */
-#ifndef _METEOR_OPTIONS_H
-#define _METEOR_OPTIONS_H
+#ifndef METEOR_OPTIONS_H
+#define METEOR_OPTIONS_H
 
 #include <getopt.h>
 #include <stdlib.h>

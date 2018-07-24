@@ -108,7 +108,7 @@ demod_get_gain(const Demod *self)
 }
 
 /* XXX not thread-safe */
-const int8_t* const
+const int8_t*
 demod_get_buf(const Demod *self)
 {
 	return self->out_buf;
@@ -149,9 +149,13 @@ demod_thr_run(void* x)
 	if (args->out_fname) {
 		if (!(out_fd = fopen(args->out_fname, "w"))) {
 			fatal("Could not open file for writing");
+			/* Not reached */
+			return NULL;
 		}
 	} else {
-		out_fd = 0;
+		fatal("No output filename specified");
+		/* Not reached */
+		return NULL;
 	}
 
 	/* Main processing loop */
@@ -170,7 +174,7 @@ demod_thr_run(void* x)
 				/* The current sample is in the correct time slot: process it */
 				/* Calculate the symbol timing error (Gardner algorithm) */
 				resync_offset -= resync_period;
-				resync_error = (cimag(cur) - cimag(before)) * cimag(mid);
+				resync_error = (cimagf(cur) - cimagf(before)) * cimagf(mid);
 				resync_offset += (resync_error*resync_period/2000000.0);
 				before = cur;
 
@@ -178,11 +182,11 @@ demod_thr_run(void* x)
 				cur = costas_resync(self->cst, cur);
 
 				/* Append the new samples to the output buffer */
-				out_buf[buf_offset++] = clamp(creal(cur)/2);
-				out_buf[buf_offset++] = clamp(cimag(cur)/2);
+				out_buf[buf_offset++] = clamp(crealf(cur)/2);
+				out_buf[buf_offset++] = clamp(cimagf(cur)/2);
 
 				/* Write binary stream to file and/or to socket */
-				if (buf_offset >= SYM_CHUNKSIZE) {
+				if (buf_offset >= SYM_CHUNKSIZE - 1) {
 					fwrite(out_buf, buf_offset, 1, out_fd);
 					buf_offset = 0;
 				}

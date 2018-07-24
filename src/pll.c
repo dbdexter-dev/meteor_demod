@@ -56,8 +56,8 @@ costas_resync(Costas *self, float complex samp)
 	retval = samp * nco_out;
 
 	/* Calculate phase delta and updothe the running average */
-	error = costas_compute_delta(creal(retval), cimag(retval))/255.0;
-	self->moving_avg = (self->moving_avg * (AVG_WINSIZE-1) + abs(error))/AVG_WINSIZE;
+	error = costas_compute_delta(crealf(retval), cimagf(retval))/255.0;
+	self->moving_avg = (self->moving_avg * (AVG_WINSIZE-1) + fabs(error))/AVG_WINSIZE;
 	error = float_clamp(error, 1.0);
 
 	/* Apply phase and frequency corrections, and advance the phase */
@@ -71,10 +71,10 @@ costas_resync(Costas *self, float complex samp)
 	}
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
-	if (!self->locked && self->moving_avg < 0.002) {
+	if (!self->locked && self->moving_avg < 0.3) {
 		costas_recompute_coeffs(self, self->damping, self->bw/2);
 		self->locked = 1;
-	} else if (self->locked && self->moving_avg > 0.025) {
+	} else if (self->locked && self->moving_avg > 0.35) {
 		costas_recompute_coeffs(self, self->damping, self->bw);
 		self->locked = 0;
 	}

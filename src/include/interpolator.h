@@ -3,8 +3,8 @@
  * easily interpolate the incoming samples, and hopefully this is the best way
  * to reconstruct a nicer looking signal
  */
-#ifndef _METEOR_INTERPOLATOR_H
-#define _METEOR_INTERPOLATOR_H
+#ifndef METEOR_INTERPOLATOR_H
+#define METEOR_INTERPOLATOR_H
 
 #include "source.h"
 

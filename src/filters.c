@@ -13,7 +13,7 @@ Filter*
 filter_new(unsigned fwd_count, unsigned back_count, ...)
 {
 	Filter *flt;
-	int i;
+	unsigned i;
 	va_list flt_parm;
 	double *fwd_coeff;
 	double *back_coeff;
@@ -52,7 +52,7 @@ Filter*
 filter_copy(const Filter *orig)
 {
 	Filter *ret;
-	int i;
+	unsigned i;
 
 	ret = safealloc(sizeof(*ret));
 
@@ -83,7 +83,7 @@ filter_copy(const Filter *orig)
 Filter*
 filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 {
-	int i;
+	unsigned i;
 	unsigned taps;
 	double *coeffs;
 	Filter *rrc;
@@ -111,7 +111,7 @@ filter_fwd(Filter *const self, float complex in)
 	float complex out;
 
 	/* Calculate the new mem[0] value through the feedback coefficients */
-	for (i=1; i<self->back_count; i++) {
+	for (i=1; i<(int)self->back_count; i++) {
 		in -= self->mem[i] * self->back_coeff[i];
 	}
 
@@ -132,12 +132,13 @@ filter_fwd(Filter *const self, float complex in)
 void
 filter_free(Filter *self)
 {
-	if (self->fwd_count) {
+	if (self->mem) {
 		free(self->mem);
+	}
+	if (self->fwd_count) {
 		free(self->fwd_coeff);
 	}
 	if (self->back_count) {
-		free(self->mem);
 		free(self->back_coeff);
 	}
 	free(self);
@@ -152,18 +153,19 @@ compute_rrc_coeff(int stage_no, unsigned taps, float osf, float alpha)
 	float coeff;
 	float t;
 	float interm;
-	unsigned order;
+	int order;
 
-	order = (taps-1)/2;
+	order = (taps - 1)/2;
 
-	t = abs(order - stage_no)/osf;
-
-	if (t==0) {
+	/* Handle the 0/0 case */
+	if (order == stage_no) {
 		return 1-alpha+4*alpha/M_PI;
 	}
 
+	t = abs(order - stage_no)/osf;
 	coeff = sin(M_PI*t*(1-alpha)) + 4*alpha*t*cos(M_PI*t*(1+alpha));
 	interm = M_PI*t*(1-(4*alpha*t)*(4*alpha*t));
+
 	return coeff / interm;
 }
 /*}}}*/

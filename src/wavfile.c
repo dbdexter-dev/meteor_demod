@@ -66,7 +66,7 @@ open_samples_file(const char *fname, unsigned samplerate)
 			state->total_samples = 0;
 		}
 		state->samples_read = 0;
-		state->tmp = safealloc(2*sizeof(state->tmp));
+		state->tmp = safealloc(2*sizeof(*state->tmp));
 	} else {
 		fatal("Could not find specified file");
 		/* Not reached */
@@ -99,7 +99,7 @@ int
 wav_read(Source *self, size_t count)
 {
 	WavState *state;
-	int i;
+	unsigned i;
 
 	state = (WavState*)self->_backend;
 

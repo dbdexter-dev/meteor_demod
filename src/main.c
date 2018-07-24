@@ -172,7 +172,7 @@ main(int argc, char *argv[])
 		if (batch_mode) {
 			if (!quiet) {
 				log("(%5.1f%%) Carrier: %+7.1f Hz, Locked: %s\n",
-					(float)in_done/in_total, freq, pll_locked ? "Yes" : "No");
+					(float)in_done/in_total*100, freq, pll_locked ? "Yes" : "No");
 			}
 			nanosleep(&timespec, NULL);
 		} else {
