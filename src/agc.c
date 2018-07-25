@@ -8,7 +8,6 @@
 #define AGC_MAX_GAIN 20
 #define AGC_BIAS_WINSIZE 1024*1024
 
-
 /* Initialize an AGC object */
 Agc*
 agc_init()
@@ -34,7 +33,7 @@ agc_apply(Agc *self, float complex sample)
 	sample -= self->bias;
 
 	/* Update the sample magnitude average */
-	rho = sqrt(creal(sample)*creal(sample) + cimag(sample)*cimag(sample));
+	rho = sqrtf(crealf(sample)*crealf(sample) + cimagf(sample)*cimagf(sample));
 	self->avg = (self->avg * (self->window_size - 1) + rho) / self->window_size;
 
 	self->gain = self->target_ampl / self->avg;

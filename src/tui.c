@@ -180,8 +180,8 @@ tui_draw_constellation(const int8_t *dots, unsigned count)
 
 	werase(tui.iq);
 	for (i=0; i<count; i++) {
-		x = round(dots[i++]*nc/255);
-		y = round(dots[i]*nr/255);
+		x = dots[i++]*nc/255;
+		y = dots[i]*nr/255;
 
 		prev = mvwinch(tui.iq, nr/2-y, x+nc/2);
 		switch(prev) {

@@ -3,8 +3,8 @@
  * costas_resync, and it'll return the samples resync'd to the reconstructed
  * carrier.
  */
-#ifndef _METEOR_PLL_H
-#define _METEOR_PLL_H
+#ifndef METEOR_PLL_H
+#define METEOR_PLL_H
 
 #include <complex.h>
 

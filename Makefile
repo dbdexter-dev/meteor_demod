@@ -8,7 +8,7 @@ PREFIX=/usr
 
 default: release
 
-debug: CFLAGS += -g -D__DEBUG -Werror
+debug: CFLAGS += -g -D__DEBUG -Wextra
 debug: src
 release: CFLAGS += -O2 -ffast-math -flto
 release: LDFLAGS += -flto

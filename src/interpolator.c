@@ -68,7 +68,7 @@ interp_read(Source *const self, size_t count)
 	InterpState *status;
 	Filter *rrc;
 	Source *src;
-	int i;
+	unsigned i;
 	int factor;
 	size_t true_samp_count;
 

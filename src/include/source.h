@@ -3,8 +3,8 @@
  * stores the data read as well as some metadata that might be useful when
  * parsing the data stream.
  */
-#ifndef _METEOR_SOURCE_H
-#define _METEOR_SOURCE_H
+#ifndef METEOR_SOURCE_H
+#define METEOR_SOURCE_H
 
 #include <stdlib.h>
 #include <stdint.h>

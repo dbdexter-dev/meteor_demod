@@ -1,8 +1,8 @@
 /**
  * Various utility functions that don't really fit in any other file.
  */
-#ifndef _METEOR_UTILS_H
-#define _METEOR_UTILS_H
+#ifndef METEOR_UTILS_H
+#define METEOR_UTILS_H
 
 #define MAX(X, Y) (X > Y) ? X : Y
 #define MIN(X, Y) (X < Y) ? X : Y
@@ -15,13 +15,13 @@ float  float_clamp(float x, float max_abs);
 int    slice(float x);
 
 void   humanize(size_t count, char *buf);
-char*  gen_fname();
+char*  gen_fname(void);
 void   seconds_to_str(unsigned secs, char *buf);
 
 void   usage(const char *pname);
 void   fatal(const char *msg);
-void   splash();
-void   version();
+void   splash(void);
+void   version(void);
 void*  safealloc(size_t size);
 
 #endif

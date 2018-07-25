@@ -1,8 +1,8 @@
 /**
  * Moving average AGC, there's not much to it really
  */
-#ifndef _METEOR_AGC_H
-#define _METEOR_AGC_H
+#ifndef METEOR_AGC_H
+#define METEOR_AGC_H
 
 #include <complex.h>
 
@@ -14,7 +14,7 @@ typedef struct {
 	float complex bias;
 } Agc;
 
-Agc*          agc_init();
+Agc*          agc_init(void);
 float complex agc_apply(Agc *agc, float complex sampl);
 void          agc_free(Agc *agc);
 
