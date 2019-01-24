@@ -11,12 +11,11 @@
 typedef struct {
 	float complex *restrict mem;
 	unsigned fwd_count;
+	unsigned stage_no;
 	float *restrict fwd_coeff;
-	unsigned back_count;
-	float *restrict back_coeff;
 } Filter;
 
-Filter*       filter_new(unsigned fwd_count, unsigned back_count, ...);
+Filter*       filter_new(unsigned fwd_count, double *fwd_coeff);
 Filter*       filter_copy(const Filter *orig);
 
 Filter*       filter_rrc(unsigned order, unsigned factor, float osf, float alpha);

@@ -1,4 +1,3 @@
-#include <stdarg.h>
 #include <string.h>
 #include <math.h>
 #include "filters.h"
@@ -10,39 +9,24 @@ float compute_rrc_coeff(int stage_no, unsigned n_taps, float osf, float alpha);
  * Variable length arguments are two ptrs to doubles, holding the coefficients
  * to use in the filter */
 Filter*
-filter_new(unsigned fwd_count, unsigned back_count, ...)
+filter_new(unsigned fwd_count, double *fwd_coeff)
 {
 	Filter *flt;
 	unsigned i;
-	va_list flt_parm;
-	double *fwd_coeff;
-	double *back_coeff;
 
 	flt = safealloc(sizeof(*flt));
 
 	flt->fwd_count = fwd_count;
-	flt->back_count = back_count;
 
-	va_start(flt_parm, back_count);
 	if (fwd_count) {
 		/* Initialize the filter memory nodes and forward coefficients */
-		fwd_coeff = va_arg(flt_parm, double*);
 		flt->fwd_coeff = safealloc(sizeof(*flt->fwd_coeff) * fwd_count);
 		flt->mem = calloc(sizeof(*flt->mem), fwd_count);
 		for (i=0; i<fwd_count; i++) {
 			flt->fwd_coeff[i] = (float)fwd_coeff[i];
 		}
 
-		if (back_count) {
-			/* Initialize the feedback coefficients */
-			back_coeff = va_arg(flt_parm, double*);
-			flt->back_coeff = safealloc(sizeof(*flt->back_coeff) * back_count);
-			for (i=0; i<back_count; i++) {
-				flt->back_coeff[i] = (float)back_coeff[i];
-			}
-		}
 	}
-	va_end(flt_parm);
 
 	return flt;
 }
@@ -56,7 +40,6 @@ filter_copy(const Filter *orig)
 
 	ret = safealloc(sizeof(*ret));
 
-	ret->back_count = orig->back_count;
 	ret->fwd_count = orig->fwd_count;
 
 	if(ret->fwd_count) {
@@ -67,14 +50,6 @@ filter_copy(const Filter *orig)
 			ret->mem[i] = 0;
 			ret->fwd_coeff[i] = orig->fwd_coeff[i];
 		}
-		if (ret->back_count) {
-			/* Copy feedback parameters */
-			ret->back_coeff = safealloc(sizeof(*ret->back_coeff) * ret->back_count);
-			for (i=0; i<ret->back_count; i++) {
-				ret->back_coeff[i] = orig->back_coeff[i];
-			}
-		}
-
 	}
 	return ret;
 }
@@ -96,7 +71,7 @@ filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 		coeffs[i] = compute_rrc_coeff(i, taps, osf*factor, alpha);
 	}
 
-	rrc = filter_new(taps, 0, coeffs);
+	rrc = filter_new(taps, coeffs);
 	free(coeffs);
 
 	return rrc;
@@ -109,11 +84,6 @@ filter_fwd(Filter *const self, float complex in)
 {
 	int i;
 	float complex out;
-
-	/* Calculate the new mem[0] value through the feedback coefficients */
-	for (i=1; i<(int)self->back_count; i++) {
-		in -= self->mem[i] * self->back_coeff[i];
-	}
 
 	/* Update the memory nodes */
 	memmove(self->mem+1, self->mem, sizeof(*self->mem) * (self->fwd_count-1));
@@ -137,9 +107,6 @@ filter_free(Filter *self)
 	}
 	if (self->fwd_count) {
 		free(self->fwd_coeff);
-	}
-	if (self->back_count) {
-		free(self->back_coeff);
 	}
 	free(self);
 }

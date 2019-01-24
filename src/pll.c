@@ -72,14 +72,12 @@ costas_resync(Costas *self, float complex samp)
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
 	if (!self->locked && self->moving_avg < 0.3) {
-		costas_recompute_coeffs(self, self->damping, self->bw/2);
+		costas_recompute_coeffs(self, self->damping, self->bw/3);
 		self->locked = 1;
 	} else if (self->locked && self->moving_avg > 0.35) {
 		costas_recompute_coeffs(self, self->damping, self->bw);
 		self->locked = 0;
 	}
-
-
 
 	return retval;
 }

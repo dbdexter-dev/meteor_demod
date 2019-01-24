@@ -10,6 +10,8 @@
 #include "utils.h"
 #include "wavfile.h"
 
+#include "filters.h"
+
 /* Default values #defines {{{ */
 /* Default symbol rate */
 #define SYM_RATE 72000
@@ -156,6 +158,7 @@ main(int argc, char *argv[])
 	if (!quiet) {
 		log("Demodulator initialized\n");
 	}
+
 
 	/* Initialize the struct that will be the argument to nanosleep() */
 	timespec.tv_sec = upd_interval/1000;
