@@ -46,7 +46,7 @@ main(int argc, char *argv[])
 
 	/* Command line changeable parameters {{{*/
 	int symbol_rate;
-	unsigned samplerate;
+	int samplerate;
 	int batch_mode;
 	int upd_interval;
 	int quiet;
@@ -73,6 +73,7 @@ main(int argc, char *argv[])
 	/* }}} */
 	/* Parse command line args {{{*/
 	if (argc < 2) {
+		splash();
 		usage(argv[0]);
 	}
 
@@ -94,6 +95,7 @@ main(int argc, char *argv[])
 			rrc_order = atoi(optarg);
 			break;
 		case 'h':
+			splash();
 			usage(argv[0]);
 			break;
 		case 'o':
@@ -106,13 +108,21 @@ main(int argc, char *argv[])
 			quiet = 1;
 			break;
 		case 'r':
-			symbol_rate = atoi(optarg);
+			symbol_rate = dehumanize(optarg);
+			if (symbol_rate < 0) {
+				fprintf(stderr, "[Error] Number format not recognized: %s\n\n", optarg);
+				usage(argv[0]);
+			}
 			break;
 		case 'R':
 			upd_interval = atoi(optarg);
 			break;
 		case 's':
-			samplerate = atoi(optarg);
+			samplerate = dehumanize(optarg);
+			if (samplerate < 0) {
+				fprintf(stderr, "[Error] Number format not recognized: %s\n\n", optarg);
+				usage(argv[0]);
+			}
 			break;
 		case 'v':
 			version();

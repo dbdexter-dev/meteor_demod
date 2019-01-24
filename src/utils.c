@@ -73,11 +73,41 @@ humanize(size_t count, char *buf)
 	}
 }
 
+/* From human readable format to integer */
+int
+dehumanize(const char *buf)
+{
+	int ret;
+	float tmp;
+	char suffix;
+
+	sscanf(buf, "%f%c", &tmp, &suffix);
+	switch(suffix) {
+	case 'k':
+	case 'K':
+		ret = tmp * 1000;
+		break;
+	case 'M':
+		ret = tmp * 1000000;
+		break;
+	case '\n':
+	case ' ':
+	case '\0':
+		ret = tmp;
+		break;
+	default:
+		ret = -1;
+		break;
+	}
+
+	return ret;
+
+}
+
 /* Print usage info */
 void
 usage(const char *pname)
 {
-	splash();
 	fprintf(stderr, "Usage: %s [options] file_in\n", pname);
 	fprintf(stderr,
 	        "   -o, --output <file>     Output decoded symbols to <file>\n"
