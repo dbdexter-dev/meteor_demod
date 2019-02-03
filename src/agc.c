@@ -2,12 +2,6 @@
 #include "agc.h"
 #include "utils.h"
 
-/* AGC default parameters */
-#define AGC_WINSIZE 1024*64
-#define AGC_TARGET 180
-#define AGC_MAX_GAIN 20
-#define AGC_BIAS_WINSIZE 1024*1024
-
 /* Initialize an AGC object */
 Agc*
 agc_init()

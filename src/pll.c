@@ -4,9 +4,6 @@
 #include "tui.h"
 #include "utils.h"
 
-#define FREQ_MAX 0.8
-#define AVG_WINSIZE 40000
-
 static float costas_compute_delta(float i_branch, float q_branch);
 static float* _lut_tanh;
 inline float lut_tanh(float val);

@@ -90,13 +90,8 @@ dehumanize(const char *buf)
 	case 'M':
 		ret = tmp * 1000000;
 		break;
-	case '\n':
-	case ' ':
-	case '\0':
-		ret = tmp;
-		break;
 	default:
-		ret = -1;
+		ret = tmp;
 		break;
 	}
 

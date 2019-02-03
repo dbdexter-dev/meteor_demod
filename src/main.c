@@ -1,7 +1,9 @@
 #include <complex.h>
 #include <math.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include "demod.h"
@@ -19,9 +21,6 @@
 /* Default update intervals */
 #define SLEEP_INTERVAL 5000
 #define UPD_INTERVAL 50
-
-/* Costas loop default parameters */
-#define COSTAS_BW 100
 
 /* RRC default parameters, alpha taken from the .grc meteor decode script */
 #define RRC_ALPHA 0.6
