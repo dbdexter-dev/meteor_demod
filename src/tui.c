@@ -58,7 +58,7 @@ tui_init(unsigned upd_interval)
 
 /* Handle terminal resizing by moving the windows around */
 void
-tui_handle_resize(int sig)
+tui_handle_resize()
 {
 	int nr, nc;
 	int iq_size;
@@ -101,7 +101,7 @@ tui_process_input()
 
 	switch(ch) {
 	case KEY_RESIZE:
-		tui_handle_resize(0);
+		tui_handle_resize();
 		break;
 	case 'q':
 		return 1;

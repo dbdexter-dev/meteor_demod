@@ -108,6 +108,7 @@ usage(const char *pname)
 	        "   -o, --output <file>     Output decoded symbols to <file>\n"
 	        "   -r, --symrate <rate>    Set the symbol rate to <rate> (default: 72000)\n"
 	        "   -s, --samplerate <samp> Force the input samplerate to <samp> (default: auto)\n"
+	        "       --bps <bps>         Force the input bits per sample to <bps> (default: 16)\n"
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50ms in TUI mode, 5000ms in batch mode)\n"
 	        "   -B, --batch             Do not use ncurses, write the message log to stdout instead\n"
 	        "   -q, --quiet             Do not print status information\n"

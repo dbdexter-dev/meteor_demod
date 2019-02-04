@@ -10,7 +10,6 @@ typedef struct {
 	FILE *fd;
 	uint64_t total_samples;
 	uint64_t samples_read;
-	int16_t *tmp;
 } WavState;
 
 static int      wav_read(Source *samp, size_t count);
@@ -21,7 +20,7 @@ static uint64_t wav_get_done(const Source *samp);
 extern int errno;
 
 Source*
-open_samples_file(const char *fname, unsigned samplerate)
+open_samples_file(const char *fname, unsigned samplerate, unsigned bps)
 {
 	Source *samp;
 	WavState *state;
@@ -50,11 +49,14 @@ open_samples_file(const char *fname, unsigned samplerate)
 			!strncmp(_header._filetype, "WAVE", 4) &&
 			!strncmp(_header._data, "data", 4)) {
 			samp->samplerate = (samplerate ? samplerate : _header.sample_rate);
-			samp->bps = _header.bits_per_sample/8;
+			samp->bps = (bps ? bps : _header.bits_per_sample);
 
-			state->total_samples = _header.subchunk2_size / _header.num_channels / samp->bps;
+			state->total_samples = _header.subchunk2_size / _header.num_channels / (samp->bps / 8);
 		} else {
-			fprintf(stderr, "Warning: input file is not a valid .wav, assuming raw 16 bit data\n");
+			if (!bps) {
+				bps = 16;
+			}
+			fprintf(stderr, "Warning: input file is not a valid .wav, assuming raw %d bit data\n", bps);
 			if (!samplerate) {
 				fatal("Please specify an input samplerate (-s <samplerate>)");
 				/* Not reached */
@@ -62,11 +64,10 @@ open_samples_file(const char *fname, unsigned samplerate)
 			}
 
 			samp->samplerate = samplerate;
-			samp->bps = 2;
+			samp->bps = bps;
 			state->total_samples = 0;
 		}
 		state->samples_read = 0;
-		state->tmp = safealloc(2*sizeof(*state->tmp));
 	} else {
 		fatal("Could not find specified file");
 		/* Not reached */
@@ -100,6 +101,8 @@ wav_read(Source *self, size_t count)
 {
 	WavState *state;
 	unsigned i;
+	uint8_t tmp_8bit[2];
+	int16_t tmp_16bit[2];
 
 	state = (WavState*)self->_backend;
 
@@ -112,13 +115,29 @@ wav_read(Source *self, size_t count)
 
 	self->count = count;
 
-	/* Convert samples (aka int16_t) to complex numbers */
-	for (i=0; i<count; i++) {
-		if (fread(state->tmp, self->bps, 2, state->fd) > 0) {
-			self->data[i] = state->tmp[0] + state->tmp[1] * I;
-		} else {
-			break;
+	/* Convert samples (uint8_t or int16_t) to complex numbers */
+	switch(self->bps) {
+	case 8:         /* unsigned 8 bits per sample */
+		for (i=0; i<count; i++) {
+			if (fread(tmp_8bit, 1, 2, state->fd) > 0) {
+				self->data[i] = tmp_8bit[0] + tmp_8bit[1] * I;
+			} else {
+				break;
+			}
 		}
+		break;
+	case 16:        /* signed 16 bits per sample */
+		for (i=0; i<count; i++) {
+			if (fread(tmp_16bit, 2, 2, state->fd) > 0) {
+				self->data[i] = tmp_16bit[0] + tmp_16bit[1] * I;
+			} else {
+				break;
+			}
+		}
+		break;
+	default:
+		fatal("Unsupported number of bits per sample");
+		break;
 	}
 
 	/* Update the byte count */
@@ -136,7 +155,6 @@ wav_close(Source *self)
 
 	state = (WavState*)self->_backend;
 	fclose(state->fd);
-	free(state->tmp);
 
 	free(self->_backend);
 	free(self->data);

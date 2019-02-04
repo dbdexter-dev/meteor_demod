@@ -7,7 +7,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 
-#define SHORTOPTS "a:b:Bf:ho:O:qr:R:s:vw"
+#define SHORTOPTS "a:b:Bf:ho:O:qr:R:s:S:vw"
 
 struct option longopts[] = {
 	{ "alpha",        1, NULL, 'a' },
@@ -20,6 +20,7 @@ struct option longopts[] = {
 	{ "quiet",        0, NULL, 'q' },
 	{ "refresh-rate", 1, NULL, 'R' },
 	{ "samplerate",   1, NULL, 's' },
+	{ "bps",          1, NULL, 'S' },
 	{ "symrate",      1, NULL, 'r' },
 	{ "version",      0, NULL, 'v' },
 	{ "wait",         0, NULL, 'w' },

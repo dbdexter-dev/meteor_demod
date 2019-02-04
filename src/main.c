@@ -46,6 +46,7 @@ main(int argc, char *argv[])
 	/* Command line changeable parameters {{{*/
 	int symbol_rate;
 	int samplerate;
+	int bps;
 	int batch_mode;
 	int upd_interval;
 	int quiet;
@@ -58,6 +59,7 @@ main(int argc, char *argv[])
 	/*}}}*/
 	/* Initialize the parameters that can be overridden with command-line args {{{*/
 	batch_mode  = 0;
+	bps = 0;
 	rrc_alpha = RRC_ALPHA;
 	samplerate = 0;
 	quiet = 0;
@@ -123,6 +125,9 @@ main(int argc, char *argv[])
 				usage(argv[0]);
 			}
 			break;
+		case 'S':
+			bps = atoi(optarg);
+			break;
 		case 'v':
 			version();
 			break;
@@ -144,7 +149,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Open raw samples file */
-	raw_samp = open_samples_file(argv[optind], samplerate);
+	raw_samp = open_samples_file(argv[optind], samplerate, bps);
 	if (!raw_samp) {
 		fatal("Couldn't open samples file");
 	}

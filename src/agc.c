@@ -12,6 +12,7 @@ agc_init()
 	agc->window_size = AGC_WINSIZE;
 	agc->target_ampl = AGC_TARGET;
 	agc->avg = AGC_TARGET;
+	agc->gain = 1;
 	agc->bias = 0;
 
 	return agc;

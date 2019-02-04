@@ -82,7 +82,7 @@ filter_rrc(unsigned order, unsigned factor, float osf, float alpha)
 float complex
 filter_fwd(Filter *const self, float complex in)
 {
-	int i;
+	size_t i;
 	float complex out;
 
 	/* Update the memory nodes */
@@ -90,8 +90,8 @@ filter_fwd(Filter *const self, float complex in)
 	self->mem[0] = in;
 
 	/* Calculate the feed-forward output */
-	out = 0;
-	for (i=self->fwd_count-1; i>=0; i--) {
+	out = in * self->fwd_coeff[0];
+	for (i=self->fwd_count-1; i>0; i--) {
 		out += self->mem[i] * self->fwd_coeff[i];
 	}
 

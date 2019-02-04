@@ -10,7 +10,7 @@
 
 void tui_init(unsigned upd_interval);
 void tui_deinit(void);
-void tui_handle_resize(int sig);
+void tui_handle_resize(void);
 
 int  tui_process_input(void);
 
