@@ -1,7 +1,9 @@
 #include <complex.h>
 #include <math.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include "demod.h"
@@ -10,6 +12,8 @@
 #include "utils.h"
 #include "wavfile.h"
 
+#include "filters.h"
+
 /* Default values #defines {{{ */
 /* Default symbol rate */
 #define SYM_RATE 72000
@@ -17,9 +21,6 @@
 /* Default update intervals */
 #define SLEEP_INTERVAL 5000
 #define UPD_INTERVAL 50
-
-/* Costas loop default parameters */
-#define COSTAS_BW 100
 
 /* RRC default parameters, alpha taken from the .grc meteor decode script */
 #define RRC_ALPHA 0.6
@@ -44,7 +45,8 @@ main(int argc, char *argv[])
 
 	/* Command line changeable parameters {{{*/
 	int symbol_rate;
-	unsigned samplerate;
+	int samplerate;
+	int bps;
 	int batch_mode;
 	int upd_interval;
 	int quiet;
@@ -57,6 +59,7 @@ main(int argc, char *argv[])
 	/*}}}*/
 	/* Initialize the parameters that can be overridden with command-line args {{{*/
 	batch_mode  = 0;
+	bps = 0;
 	rrc_alpha = RRC_ALPHA;
 	samplerate = 0;
 	quiet = 0;
@@ -71,6 +74,7 @@ main(int argc, char *argv[])
 	/* }}} */
 	/* Parse command line args {{{*/
 	if (argc < 2) {
+		splash();
 		usage(argv[0]);
 	}
 
@@ -92,6 +96,7 @@ main(int argc, char *argv[])
 			rrc_order = atoi(optarg);
 			break;
 		case 'h':
+			splash();
 			usage(argv[0]);
 			break;
 		case 'o':
@@ -104,13 +109,24 @@ main(int argc, char *argv[])
 			quiet = 1;
 			break;
 		case 'r':
-			symbol_rate = atoi(optarg);
+			symbol_rate = dehumanize(optarg);
+			if (symbol_rate < 0) {
+				fprintf(stderr, "[Error] Number format not recognized: %s\n\n", optarg);
+				usage(argv[0]);
+			}
 			break;
 		case 'R':
 			upd_interval = atoi(optarg);
 			break;
 		case 's':
-			samplerate = atoi(optarg);
+			samplerate = dehumanize(optarg);
+			if (samplerate < 0) {
+				fprintf(stderr, "[Error] Number format not recognized: %s\n\n", optarg);
+				usage(argv[0]);
+			}
+			break;
+		case 'S':
+			bps = atoi(optarg);
 			break;
 		case 'v':
 			version();
@@ -133,7 +149,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Open raw samples file */
-	raw_samp = open_samples_file(argv[optind], samplerate);
+	raw_samp = open_samples_file(argv[optind], samplerate, bps);
 	if (!raw_samp) {
 		fatal("Couldn't open samples file");
 	}
@@ -156,6 +172,7 @@ main(int argc, char *argv[])
 	if (!quiet) {
 		log("Demodulator initialized\n");
 	}
+
 
 	/* Initialize the struct that will be the argument to nanosleep() */
 	timespec.tv_sec = upd_interval/1000;

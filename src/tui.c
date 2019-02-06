@@ -61,7 +61,7 @@ void
 tui_handle_resize()
 {
 	int nr, nc;
-	int iq_size, cur_row;
+	int iq_size;
 
 	/* Re-initialize ncurses with the correct dimensions */
 	werase(stdscr);
@@ -70,23 +70,20 @@ tui_handle_resize()
 	refresh();
 	getmaxyx(stdscr, nr, nc);
 
-	iq_size = MIN(CONSTELL_MAX, nr);
-	cur_row = 0;
+	iq_size = (MIN(CONSTELL_MAX, MIN(nr, nc/2))) | 0x3;
 
 	wresize(tui.banner_top, 1, nc);
 	mvwin(tui.banner_top, 0, 0);
 	wresize(tui.iq, iq_size/2, iq_size);
 	mvwin(tui.iq, 2, 0);
-	wresize(tui.pll, iq_size/6, nc - iq_size);
-	mvwin(tui.pll, 2+cur_row, iq_size+2);
-	cur_row += iq_size/6;
-	wresize(tui.filein, iq_size/6, nc - iq_size);
-	mvwin(tui.filein, 2+cur_row, iq_size+2);
-	cur_row += iq_size/6;
-	wresize(tui.dataout, iq_size/6, nc - iq_size);
-	mvwin(tui.dataout, 2+cur_row, iq_size+2);
-	wresize(tui.infowin, MIN(nr - iq_size, 10), nc);
-	mvwin(tui.infowin, 2+iq_size/2+2, 0);
+	wresize(tui.pll, 3, nc - iq_size - 2);
+	mvwin(tui.pll, 2, iq_size+2);
+	wresize(tui.filein, 2, nc - iq_size - 2);
+	mvwin(tui.filein, 6, iq_size+2);
+	wresize(tui.dataout, 2, nc - iq_size - 2);
+	mvwin(tui.dataout, 9, iq_size+2);
+	wresize(tui.infowin, MIN(5, nr-iq_size/2-4), nc);
+	mvwin(tui.infowin, MAX(12, 2+iq_size/2+1), 0);
 
 	print_banner(tui.banner_top);
 	iq_draw_quadrants(tui.iq);
@@ -265,6 +262,12 @@ tui_wait_for_user_input()
 void
 tui_deinit()
 {
+	delwin(tui.iq);
+	delwin(tui.pll);
+	delwin(tui.filein);
+	delwin(tui.dataout);
+	delwin(tui.infowin);
+	delwin(tui.banner_top);
 	endwin();
 }
 
@@ -282,19 +285,16 @@ void
 windows_init(int rows, int cols)
 {
 	int iq_size;
-	int cur_row;
 
-	iq_size = MIN(CONSTELL_MAX, cols);
-	cur_row = 0;
+	iq_size = (MIN(CONSTELL_MAX, MIN(rows, cols/2))) | 0x3;
 
 	tui.banner_top = newwin(1, cols, 0, 0);
 	tui.iq = newwin(iq_size/2, iq_size, 2, 0);
-	tui.pll = newwin(iq_size/6, cols-iq_size-2, 2+cur_row, iq_size+2);
-	cur_row += iq_size/6;
-	tui.filein = newwin(iq_size/6, cols-iq_size-2, 2+cur_row, iq_size+2);
-	cur_row += iq_size/6;
-	tui.dataout = newwin(iq_size/6, cols-iq_size-2, 2+cur_row, iq_size+2);
-	tui.infowin = newwin(MIN(rows - iq_size/2, 10), cols, 2+iq_size/2+2, 0);
+	tui.pll = newwin(3, cols-iq_size-2, 2, iq_size+2);
+	tui.filein = newwin(2, cols-iq_size-2, 6, iq_size+2);
+	tui.dataout = newwin(2, cols-iq_size-2, 9, iq_size+2);
+	tui.infowin = newwin(MIN(5, rows-iq_size/2-4), cols,
+	                     MAX(12, 2+iq_size/2+1), 0);
 
 	scrollok(tui.infowin, TRUE);
 	wtimeout(tui.infowin, _upd_interval);

@@ -4,9 +4,6 @@
 #include "tui.h"
 #include "utils.h"
 
-#define FREQ_MAX 0.8
-#define AVG_WINSIZE 40000
-
 static float costas_compute_delta(float i_branch, float q_branch);
 static float* _lut_tanh;
 inline float lut_tanh(float val);
@@ -72,14 +69,12 @@ costas_resync(Costas *self, float complex samp)
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
 	if (!self->locked && self->moving_avg < 0.3) {
-		costas_recompute_coeffs(self, self->damping, self->bw/2);
+		costas_recompute_coeffs(self, self->damping, self->bw/3);
 		self->locked = 1;
 	} else if (self->locked && self->moving_avg > 0.35) {
 		costas_recompute_coeffs(self, self->damping, self->bw);
 		self->locked = 0;
 	}
-
-
 
 	return retval;
 }

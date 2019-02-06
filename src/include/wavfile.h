@@ -26,6 +26,6 @@ struct wave_header
 	uint32_t subchunk2_size;
 };
 
-Source* open_samples_file(const char *fname, unsigned samplerate);
+Source* open_samples_file(const char *fname, unsigned samplerate, unsigned bps);
 
 #endif
