@@ -130,7 +130,7 @@ tui_print_info(const char *msg, ...)
 	wprintw(tui.infowin, "(%s) ", timestr);
 
 	va_start(ap, msg);
-	vwprintw(tui.infowin, msg, ap);
+	vw_printw(tui.infowin, msg, ap);
 	va_end(ap);
 
 	return 0;
@@ -308,12 +308,12 @@ iq_draw_quadrants(WINDOW *win)
 
 	getmaxyx(win, nr, nc);
 	for (i=0; i<nr; i++) {
-		mvwaddch(win, i, nc/2, '|');
+		mvwaddch(win, i, nc/2, ACS_VLINE);
 	}
 	for (i=0; i<nc; i++) {
-		mvwaddch(win, nr/2, i, '-');
+		mvwaddch(win, nr/2, i, ACS_HLINE);
 	}
-	mvwaddch(win, nr/2, nc/2, '+');
+	mvwaddch(win, nr/2, nc/2, ACS_PLUS);
 	wrefresh(win);
 }
 /*}}}*/
