@@ -10,13 +10,14 @@
 
 typedef struct {
 	Demod *self;
-	const char *out_fname;
+	FILE *fd;
 } ThrArgs;
 
-static void* demod_thr_run(void* args);
+static void* demod_thr_qpsk(void* args);
+static void* demod_thr_oqpsk(void* args);
 
 Demod*
-demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float rrc_alpha, float pll_bw, unsigned sym_rate)
+demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float rrc_alpha, float pll_bw, unsigned sym_rate, ModScheme mode)
 {
 	Demod *ret;
 
@@ -34,7 +35,8 @@ demod_init(Source *src, unsigned interp_mult, unsigned rrc_order, float rrc_alph
 
 	/* Initialize Costas loop */
 	pll_bw = 2*M_PI*pll_bw/sym_rate;
-	ret->cst = costas_init(pll_bw);
+	ret->cst = costas_init(pll_bw, mode);
+	ret->mode = mode;
 
 	/* Initialize the timing recovery variables */
 	ret->sym_rate = sym_rate;
@@ -53,10 +55,20 @@ demod_start(Demod *self, const char *fname)
 
 	args = safealloc(sizeof(*args));
 
-	args->out_fname = fname;
-	args->self = self;
 
-	pthread_create(&self->t, NULL, demod_thr_run, (void*)args);
+	args->self = self;
+	if (!(args->fd = fopen(fname, "wb"))) {
+		fatal("Could not create/open output file");
+		free(args);
+		/* Not reached */
+		return;
+	}
+
+	if (self->mode == QPSK) {
+		pthread_create(&self->t, NULL, demod_thr_qpsk, (void*)args);
+	} else if (self->mode == OQPSK) {
+		pthread_create(&self->t, NULL, demod_thr_oqpsk, (void*)args);
+	}
 }
 
 int
@@ -131,46 +143,53 @@ demod_join(Demod *self)
 }
 
 /* Static functions {{{ */
-void*
-demod_thr_run(void* x)
+/* Append a symbol to a file */
+void
+demod_write_symbol(Demod *self, FILE *out_fd, float complex sym, int nobuffer)
 {
-	FILE *out_fd;
-	int i, count, buf_offset;
-	float complex before, mid, cur;
-	float resync_offset, resync_error, resync_period;
-	int8_t *out_buf;
+	static int offset = 0;
+	int8_t *const out_buf = self->out_buf;
 
-	const ThrArgs *args = (ThrArgs*)x;
-	Demod *self = args->self;
-	out_buf = self->out_buf;
+	out_buf[offset++] = clamp(crealf(sym)/2);
+	out_buf[offset++] = clamp(cimagf(sym)/2);
 
-	resync_period = self->sym_period;
-
-	if (args->out_fname) {
-		if (!(out_fd = fopen(args->out_fname, "w"))) {
-			fatal("Could not open file for writing");
-			/* Not reached */
-			return NULL;
-		}
-	} else {
-		fatal("No output filename specified");
-		/* Not reached */
-		return NULL;
+	if (offset >= SYM_CHUNKSIZE - 1 || nobuffer) {
+		fwrite(out_buf, offset, 1, out_fd);
+		offset = 0;
 	}
 
-	/* Main processing loop */
-	buf_offset = 0;
+	pthread_mutex_lock(&self->mutex);
+	self->bytes_out_count += 2;
+	pthread_mutex_unlock(&self->mutex);
+}
+
+void*
+demod_thr_qpsk(void* x)
+{
+	const ThrArgs *args = (ThrArgs*)x;
+	int i, count;
+	float complex tmp;
+	float complex before, mid, cur;
+	float resync_offset, resync_error, resync_period;
+
+	Demod *self = args->self;
+	resync_period = self->sym_period;
+
 	resync_offset = 0;
 	before = 0;
 	mid = 0;
 	cur = 0;
+
+	/* Main processing loop */
 	while (self->thr_is_running && (count = self->interp->read(self->interp, CHUNKSIZE))) {
 		for (i=0; i<count; i++) {
+			tmp = self->interp->data[i];
+
 			/* Symbol resampling */
 			if (resync_offset >= resync_period/2 && resync_offset < resync_period/2+1) {
-				mid = agc_apply(self->agc, self->interp->data[i]);
+				mid = agc_apply(self->agc, tmp);
 			} else if (resync_offset >= resync_period) {
-				cur = agc_apply(self->agc, self->interp->data[i]);
+				cur = agc_apply(self->agc, tmp);
 				/* The current sample is in the correct time slot: process it */
 				/* Calculate the symbol timing error (Gardner algorithm) */
 				resync_offset -= resync_period;
@@ -181,29 +200,27 @@ demod_thr_run(void* x)
 				/* Fine frequency/phase tuning */
 				cur = costas_resync(self->cst, cur);
 
-				/* Append the new samples to the output buffer */
-				out_buf[buf_offset++] = clamp(crealf(cur)/2);
-				out_buf[buf_offset++] = clamp(cimagf(cur)/2);
-
-				/* Write binary stream to file and/or to socket */
-				if (buf_offset >= SYM_CHUNKSIZE - 1) {
-					fwrite(out_buf, buf_offset, 1, out_fd);
-					buf_offset = 0;
-				}
-				pthread_mutex_lock(&self->mutex);
-				self->bytes_out_count += 2;
-				pthread_mutex_unlock(&self->mutex);
+				/* Append the new samples to the output file */
+				demod_write_symbol(self, args->fd, cur, 0);
 			}
 			resync_offset++;
 		}
 	}
 
 	/* Write the remaining bytes */
-	fwrite(out_buf, buf_offset, 1, out_fd);
-	fclose(out_fd);
+	demod_write_symbol(self, args->fd, 0, 1);
+	fclose(args->fd);
 
 	free(x);
 	self->thr_is_running = 0;
+	return NULL;
+}
+
+void*
+demod_thr_oqpsk(void *x)
+{
+	const ThrArgs *args = (ThrArgs*)x;
+	/* TODO implementation */
 	return NULL;
 }
 /*}}}*/
