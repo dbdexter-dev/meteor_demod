@@ -7,7 +7,7 @@
 #define METEOR_PLL_H
 
 #include <complex.h>
-
+#include "utils.h"
 
 /* Costas loop default parameters */
 #define COSTAS_BW 100
@@ -22,9 +22,10 @@ typedef struct {
 	float damping, bw;
 	int locked;
 	float moving_avg;
+	ModScheme mode;
 } Costas;
 
-Costas*       costas_init(float bw);
+Costas*       costas_init(float bw, ModScheme mode);
 float complex costas_resync(Costas *self, float complex samp);
 void          costas_free(Costas *self);
 

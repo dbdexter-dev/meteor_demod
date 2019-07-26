@@ -25,6 +25,9 @@ Usage: meteor_demod [options] file_in
    -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50ms in TUI mode, 5000ms in batch mode)
    -B, --batch             Do not use ncurses, write the message log to stdout instead
    -q, --quiet             Do not print status information
+   -m, --mode <mode>       Specify the signal modulation scheme (default: qpsk)
+                           Available modes: qpsk (Meteor-M 2), oqpsk (Meteor-M 2-2)
+
 
 Advanced options:
    -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)

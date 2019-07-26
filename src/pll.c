@@ -10,7 +10,7 @@ inline float lut_tanh(float val);
 
 /* Initialize a Costas loop for carrier frequency/phase recovery */
 Costas*
-costas_init(float bw)
+costas_init(float bw, ModScheme mode)
 {
 	int i;
 	Costas *costas;
@@ -24,6 +24,7 @@ costas_init(float bw)
 
 	costas->damping = COSTAS_DAMP;
 	costas->bw = bw;
+	costas->mode = mode;
 
 	costas->moving_avg = 1;
 	costas->locked = 0;
@@ -52,7 +53,7 @@ costas_resync(Costas *self, float complex samp)
 	/* Mix sample with LO */
 	retval = samp * nco_out;
 
-	/* Calculate phase delta and updothe the running average */
+	/* Calculate phase delta and update the running average */
 	error = costas_compute_delta(crealf(retval), cimagf(retval))/255.0;
 	self->moving_avg = (self->moving_avg * (AVG_WINSIZE-1) + fabs(error))/AVG_WINSIZE;
 	error = float_clamp(error, 1.0);
@@ -60,12 +61,14 @@ costas_resync(Costas *self, float complex samp)
 	/* Apply phase and frequency corrections, and advance the phase */
 	self->nco_phase = fmod(self->nco_phase + self->nco_freq + self->alpha*error, 2*M_PI);
 	self->nco_freq = self->nco_freq + self->beta*error;
+	/*
 
 	if (self->nco_freq <= -FREQ_MAX) {
 		self->nco_freq = -FREQ_MAX/2;
 	} else if (self->nco_freq >= FREQ_MAX) {
 		self->nco_freq = FREQ_MAX/2;
 	}
+	*/
 
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
 	if (!self->locked && self->moving_avg < 0.3) {
@@ -101,7 +104,7 @@ costas_free(Costas *self)
 }
 
 /* Static functions {{{ */
-/* Compute the delta phase value to use when correcting the NCO frequency */
+/* Compute the delta phase value to use when correcting the NCO frequency (QPSK) */
 float
 costas_compute_delta(float i_branch, float q_branch)
 {
