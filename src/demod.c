@@ -13,6 +13,8 @@ typedef struct {
 	FILE *fd;
 } ThrArgs;
 
+static inline float cabs2f(float complex x);
+static inline float demod_diff(Demod *self, float complex prev, float complex next, float samp_period);
 static void* demod_thr_qpsk(void* args);
 static void* demod_thr_oqpsk(void* args);
 
@@ -219,8 +221,79 @@ demod_thr_qpsk(void* x)
 void*
 demod_thr_oqpsk(void *x)
 {
+	int i, count;
+	float complex tmp, cur, prev, next, inphase, quad;
+	float resync_offset, eta;
+	float t, t2, t4;
 	const ThrArgs *args = (ThrArgs*)x;
-	/* TODO implementation */
+	Demod *const self = args->self;
+
+	const float sampling_freq = 1;
+	resync_offset = 0;
+	cur = 0;
+	prev = 0;
+
+	/* Main processing loop */
+	while (self->thr_is_running && (count = self->interp->read(self->interp, CHUNKSIZE))) {
+		for (i=0; i<count; i++) {
+			next = self->interp->data[i];
+
+			/* Symbol timing recovery */
+			if (resync_offset >= self->sym_period/2 && resync_offset < self->sym_period/2+1) {
+				t2 = demod_diff(self, prev, cur, sampling_freq);
+				inphase = agc_apply(self->agc, cur);
+			} else if (resync_offset >= 3*self->sym_period/4 && resync_offset < 3*self->sym_period/4+1) {
+				t4 = demod_diff(self, prev, cur, sampling_freq);
+			} else if (resync_offset >= self->sym_period) {
+				t = demod_diff(self, prev, cur, sampling_freq);
+				quad = agc_apply(self->agc, cur);
+
+				resync_offset -= self->sym_period;
+				eta = t4 * (t - t2);
+//				printf("%f\n", eta);
+//				printf("t/2:%8f\tt/4:%8f\tt:%8f\n", t2, t4, t);
+				eta = float_clamp(eta, 2000000.0/2-1);
+
+				resync_offset -= (eta*self->sym_period/2000000.0);
+
+				inphase = costas_resync(self->cst, inphase);
+				quad = costas_resync(self->cst, quad);
+
+				tmp = crealf(inphase) + I * cimagf(quad);
+
+				//printf("%f, %f\n", crealf(tmp), cimagf(tmp));
+
+				demod_write_symbol(self, args->fd, tmp, 0);
+			}
+
+			resync_offset++;
+			prev = cur;
+			cur = next;
+		}
+	}
+
+	demod_write_symbol(self, args->fd, 0, 1);
+	fclose(args->fd);
+
+	free(x);
+	self->thr_is_running = 0;
 	return NULL;
+}
+
+inline float
+cabs2f(float complex x)
+{
+	return crealf(x) * crealf(x) + cimagf(x) * cimagf(x);
+}
+
+inline float
+demod_diff(Demod *self, float complex prev, float complex next, float samp_period)
+{
+	float prev_mod, next_mod;
+
+	prev_mod = cabs2f(agc_apply(self->agc, prev));
+	next_mod = cabs2f(agc_apply(self->agc, next));
+
+	return (next_mod - prev_mod) / (255);
 }
 /*}}}*/
