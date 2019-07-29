@@ -112,6 +112,10 @@ demod_get_size(const Demod *self)
 float
 demod_get_freq(const Demod *self)
 {
+	if (self->mode == OQPSK) {
+		return 2*self->cst->nco_freq*self->sym_rate/(2*M_PI);
+	}
+
 	return self->cst->nco_freq*self->sym_rate/(2*M_PI);
 }
 
@@ -187,19 +191,17 @@ demod_thr_qpsk(void* x)
 		for (i=0; i<count; i++) {
 			tmp = self->interp->data[i];
 
-			/* Symbol resampling */
+			/* symbol timing recovery (Gardner) */
 			if (resync_offset >= resync_period/2 && resync_offset < resync_period/2+1) {
 				mid = agc_apply(self->agc, tmp);
 			} else if (resync_offset >= resync_period) {
 				cur = agc_apply(self->agc, tmp);
-				/* The current sample is in the correct time slot: process it */
-				/* Calculate the symbol timing error (Gardner algorithm) */
 				resync_offset -= resync_period;
 				resync_error = (cimagf(cur) - cimagf(before)) * cimagf(mid);
 				resync_offset += (resync_error*resync_period/2000000.0);
 				before = cur;
 
-				/* Fine frequency/phase tuning */
+				/* Costas loop frequency/phase tuning */
 				cur = costas_resync(self->cst, cur);
 
 				/* Append the new samples to the output file */
@@ -222,53 +224,51 @@ void*
 demod_thr_oqpsk(void *x)
 {
 	int i, count;
-	float complex tmp, cur, prev, next, inphase, quad;
-	float resync_offset, eta;
-	float t, t2, t4;
+	float complex tmp, inphase, quad;
+	float complex before, mid, cur;
+	float prev_i;
+	float resync_error, resync_offset;
 	const ThrArgs *args = (ThrArgs*)x;
 	Demod *const self = args->self;
 
-	const float sampling_freq = 1;
 	resync_offset = 0;
 	cur = 0;
-	prev = 0;
+	before = 0;
+	inphase = 0;
+	quad = 0;
 
 	/* Main processing loop */
 	while (self->thr_is_running && (count = self->interp->read(self->interp, CHUNKSIZE))) {
 		for (i=0; i<count; i++) {
-			next = self->interp->data[i];
+			tmp = self->interp->data[i];
 
-			/* Symbol timing recovery */
+			/* Symbol timing recovery (Gardner) */
 			if (resync_offset >= self->sym_period/2 && resync_offset < self->sym_period/2+1) {
-				t2 = demod_diff(self, prev, cur, sampling_freq);
-				inphase = agc_apply(self->agc, cur);
-			} else if (resync_offset >= 3*self->sym_period/4 && resync_offset < 3*self->sym_period/4+1) {
-				t4 = demod_diff(self, prev, cur, sampling_freq);
+				inphase = costas_mix(self->cst, agc_apply(self->agc, tmp));
+				mid = prev_i + I * cimagf(inphase);
+				prev_i = crealf(inphase);
+
 			} else if (resync_offset >= self->sym_period) {
-				t = demod_diff(self, prev, cur, sampling_freq);
-				quad = agc_apply(self->agc, cur);
+				quad = costas_mix(self->cst, agc_apply(self->agc, tmp));
+				cur = prev_i + I * cimagf(quad);
+				prev_i = crealf(quad);
 
 				resync_offset -= self->sym_period;
-				eta = t4 * (t - t2);
-//				printf("%f\n", eta);
-//				printf("t/2:%8f\tt/4:%8f\tt:%8f\n", t2, t4, t);
-				eta = float_clamp(eta, 2000000.0/2-1);
+				resync_error = (cimagf(quad) - cimagf(before)) * cimagf(mid);
+				resync_offset += (resync_error*self->sym_period/2000000.0);
+				before = cur;
 
-				resync_offset -= (eta*self->sym_period/2000000.0);
-
-				inphase = costas_resync(self->cst, inphase);
-				quad = costas_resync(self->cst, quad);
+				costas_correct_phase(self->cst, costas_oqpsk_delta(inphase, quad));
 
 				tmp = crealf(inphase) + I * cimagf(quad);
-
-				//printf("%f, %f\n", crealf(tmp), cimagf(tmp));
+/*				printf("%f,%f,", crealf(inphase), cimagf(inphase));*/
+/*				printf("%f,%f,", crealf(quad), cimagf(quad));*/
+/*				printf("%f,%f", crealf(tmp), cimagf(tmp));*/
+/*				printf("\n");*/
 
 				demod_write_symbol(self, args->fd, tmp, 0);
 			}
-
 			resync_offset++;
-			prev = cur;
-			cur = next;
 		}
 	}
 
@@ -291,9 +291,9 @@ demod_diff(Demod *self, float complex prev, float complex next, float samp_perio
 {
 	float prev_mod, next_mod;
 
-	prev_mod = cabs2f(agc_apply(self->agc, prev));
-	next_mod = cabs2f(agc_apply(self->agc, next));
+	prev_mod = cabs2f(prev);
+	next_mod = cabs2f(next);
 
-	return (next_mod - prev_mod) / (255);
+	return (prev_mod - next_mod) / (255);
 }
 /*}}}*/

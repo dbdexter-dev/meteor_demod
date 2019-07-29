@@ -87,7 +87,7 @@ main(int argc, char *argv[])
 			rrc_alpha = atof(optarg);
 			break;
 		case 'b':
-			costas_bw = atoi(optarg);
+			costas_bw = atof(optarg);
 			break;
 		case 'B':
 			batch_mode = 1;
