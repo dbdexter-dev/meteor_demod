@@ -4,9 +4,6 @@
 #include "tui.h"
 #include "utils.h"
 
-static float costas_qpsk_delta(float complex samp);
-//static float costas_oqpsk_delta(float complex samp, float complex cosamp);
-
 static float* _lut_tanh;
 inline float lut_tanh(float val);
 
@@ -36,7 +33,6 @@ costas_init(float bw, ModScheme mode)
 		_lut_tanh[i] = tanh((i-128));
 	}
 
-
 	return costas;
 }
 
@@ -60,6 +56,28 @@ costas_correct_phase(Costas *self, float err)
 	self->nco_phase = fmod(self->nco_phase + self->alpha*err, 2*M_PI);
 	self->nco_freq = self->nco_freq + self->beta*err;
 
+	self->moving_avg = (self->moving_avg * (AVG_WINSIZE-1) + fabs(err))/AVG_WINSIZE;
+
+	/* Detect whether the PLL is locked, and decrease the BW if it is */
+	if (self->mode == OQPSK) {
+		if (!self->locked && self->moving_avg < 0.85) {
+			costas_recompute_coeffs(self, self->damping, self->bw/3);
+			self->locked = 1;
+		} else if (self->locked && self->moving_avg > 0.9) {
+			costas_recompute_coeffs(self, self->damping, self->bw);
+			self->locked = 0;
+		}
+	} else if (self->mode == QPSK) {
+		if (!self->locked && self->moving_avg < 0.5) {
+			costas_recompute_coeffs(self, self->damping, self->bw/3);
+			self->locked = 1;
+		} else if (self->locked && self->moving_avg > 0.55) {
+			costas_recompute_coeffs(self, self->damping, self->bw);
+			self->locked = 0;
+		}
+	}
+
+
 	/* Limit frequency to a sensible range */
 	if (self->nco_freq <= -FREQ_MAX) {
 		self->nco_freq = -FREQ_MAX/2;
@@ -67,37 +85,6 @@ costas_correct_phase(Costas *self, float err)
 		self->nco_freq = FREQ_MAX/2;
 	}
 }
-
-/* Demodulate a sample with the reconstructed carrier, and update the carrier
- * itself based on how far the sample is to the closest constellation point */
-float complex
-costas_resync(Costas *self, float complex samp)
-{
-	static float complex prev = 0;
-	float complex retval;
-	float error;
-
-	/* Mix sample with LO */
-	retval = costas_mix(self, samp);
-
-	/* Calculate phase delta and update the running average */
-	error = costas_qpsk_delta(retval)/255.0;
-
-	self->moving_avg = (self->moving_avg * (AVG_WINSIZE-1) + fabs(error))/AVG_WINSIZE;
-	costas_correct_phase(self, error);
-
-	/* Detect whether the PLL is locked, and decrease the BW if it is */
-	if (!self->locked && self->moving_avg < 0.3) {
-		costas_recompute_coeffs(self, self->damping, self->bw/3);
-		self->locked = 1;
-	} else if (self->locked && self->moving_avg > 0.35) {
-		costas_recompute_coeffs(self, self->damping, self->bw);
-		self->locked = 0;
-	}
-
-	return retval;
-}
-
 
 /* Compute the alpha and beta coefficients of the Costas loop from damping and
  * bandwidth, and update them in the Costas object */
@@ -120,32 +107,20 @@ costas_free(Costas *self)
 	free(_lut_tanh);
 }
 
-/* Static functions {{{ */
-/* Compute the delta phase value to use when correcting the NCO frequency (QPSK) */
-float
-costas_qpsk_delta(float complex samp)
-{
-	const float i_branch = crealf(samp);
-	const float q_branch = cimagf(samp);
-	float error;
-
-	error = q_branch * lut_tanh(i_branch) -
-	        i_branch * lut_tanh(q_branch);
-	return error;
-}
 
 /* Compute the delta phase value to use when correcting the NCO frequency (OQPSK) */
 float
-costas_oqpsk_delta(float complex sample, float complex cosample)
+costas_delta(float complex sample, float complex cosample)
 {
 	float error;
 
 	error = (lut_tanh(crealf(sample)) * cimagf(sample)) -
 	        (lut_tanh(cimagf(cosample)) * crealf(cosample));
 
-	return error/10;
+	return error/50;
 }
 
+/* Static functions {{{ */
 float
 lut_tanh(float val)
 {

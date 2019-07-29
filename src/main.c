@@ -171,6 +171,11 @@ main(int argc, char *argv[])
 		log("Input samplerate: %d\n", raw_samp->samplerate);
 	}
 
+	/* OQPSK seems to require lower bandwidths */
+	if (mode == OQPSK) {
+		costas_bw /= 5;
+	}
+
 	/* Initialize the demodulator */
 	demod = demod_init(raw_samp, interp_factor, rrc_order, rrc_alpha, costas_bw, symbol_rate, mode);
 	demod_start(demod, out_fname);

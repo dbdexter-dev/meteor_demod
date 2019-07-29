@@ -13,8 +13,6 @@ typedef struct {
 	FILE *fd;
 } ThrArgs;
 
-static inline float cabs2f(float complex x);
-static inline float demod_diff(Demod *self, float complex prev, float complex next, float samp_period);
 static void* demod_thr_qpsk(void* args);
 static void* demod_thr_oqpsk(void* args);
 
@@ -202,7 +200,8 @@ demod_thr_qpsk(void* x)
 				before = cur;
 
 				/* Costas loop frequency/phase tuning */
-				cur = costas_resync(self->cst, cur);
+				cur = costas_mix(self->cst, cur);
+				costas_correct_phase(self->cst, costas_delta(cur, cur));
 
 				/* Append the new samples to the output file */
 				demod_write_symbol(self, args->fd, cur, 0);
@@ -232,23 +231,21 @@ demod_thr_oqpsk(void *x)
 	Demod *const self = args->self;
 
 	resync_offset = 0;
-	cur = 0;
 	before = 0;
-	inphase = 0;
-	quad = 0;
+	prev_i = 0;
 
 	/* Main processing loop */
 	while (self->thr_is_running && (count = self->interp->read(self->interp, CHUNKSIZE))) {
 		for (i=0; i<count; i++) {
 			tmp = self->interp->data[i];
 
-			/* Symbol timing recovery (Gardner) */
 			if (resync_offset >= self->sym_period/2 && resync_offset < self->sym_period/2+1) {
 				inphase = costas_mix(self->cst, agc_apply(self->agc, tmp));
 				mid = prev_i + I * cimagf(inphase);
 				prev_i = crealf(inphase);
 
 			} else if (resync_offset >= self->sym_period) {
+				/* Symbol timing recovery (Gardner) */
 				quad = costas_mix(self->cst, agc_apply(self->agc, tmp));
 				cur = prev_i + I * cimagf(quad);
 				prev_i = crealf(quad);
@@ -258,13 +255,9 @@ demod_thr_oqpsk(void *x)
 				resync_offset += (resync_error*self->sym_period/2000000.0);
 				before = cur;
 
-				costas_correct_phase(self->cst, costas_oqpsk_delta(inphase, quad));
-
+				/* Carrier tracking */
+				costas_correct_phase(self->cst, costas_delta(inphase, quad));
 				tmp = crealf(inphase) + I * cimagf(quad);
-/*				printf("%f,%f,", crealf(inphase), cimagf(inphase));*/
-/*				printf("%f,%f,", crealf(quad), cimagf(quad));*/
-/*				printf("%f,%f", crealf(tmp), cimagf(tmp));*/
-/*				printf("\n");*/
 
 				demod_write_symbol(self, args->fd, tmp, 0);
 			}
@@ -278,22 +271,5 @@ demod_thr_oqpsk(void *x)
 	free(x);
 	self->thr_is_running = 0;
 	return NULL;
-}
-
-inline float
-cabs2f(float complex x)
-{
-	return crealf(x) * crealf(x) + cimagf(x) * cimagf(x);
-}
-
-inline float
-demod_diff(Demod *self, float complex prev, float complex next, float samp_period)
-{
-	float prev_mod, next_mod;
-
-	prev_mod = cabs2f(prev);
-	next_mod = cabs2f(next);
-
-	return (prev_mod - next_mod) / (255);
 }
 /*}}}*/

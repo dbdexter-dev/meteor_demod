@@ -29,7 +29,8 @@ Costas*       costas_init(float bw, ModScheme mode);
 float complex costas_resync(Costas *self, float complex samp);
 float complex costas_mix(Costas *self, float complex samp);
 void          costas_free(Costas *self);
-float         costas_oqpsk_delta(float complex samp, float complex cosamp);
+
+float         costas_delta(float complex samp, float complex cosamp);
 
 void          costas_recompute_coeffs(Costas *self, float damping, float bw);
 void          costas_correct_phase(Costas *self, float err);
