@@ -42,6 +42,7 @@ main(int argc, char *argv[])
 	int pll_locked;
 	Source *raw_samp;
 	Demod *demod;
+	ModScheme mode;
 
 	/* Command line changeable parameters {{{*/
 	int symbol_rate;
@@ -71,6 +72,7 @@ main(int argc, char *argv[])
 	interp_factor = INTERP_FACTOR;
 	rrc_order = RRC_FIR_ORDER;
 	free_fname_on_exit = 0;
+	mode = QPSK;
 	/* }}} */
 	/* Parse command line args {{{*/
 	if (argc < 2) {
@@ -85,7 +87,7 @@ main(int argc, char *argv[])
 			rrc_alpha = atof(optarg);
 			break;
 		case 'b':
-			costas_bw = atoi(optarg);
+			costas_bw = atof(optarg);
 			break;
 		case 'B':
 			batch_mode = 1;
@@ -98,6 +100,9 @@ main(int argc, char *argv[])
 		case 'h':
 			splash();
 			usage(argv[0]);
+			break;
+		case 'm':
+			mode = parse_mode(optarg);
 			break;
 		case 'o':
 			out_fname = optarg;
@@ -166,8 +171,13 @@ main(int argc, char *argv[])
 		log("Input samplerate: %d\n", raw_samp->samplerate);
 	}
 
+	/* OQPSK seems to require lower bandwidths */
+	if (mode == OQPSK) {
+		costas_bw /= 5;
+	}
+
 	/* Initialize the demodulator */
-	demod = demod_init(raw_samp, interp_factor, rrc_order, rrc_alpha, costas_bw, symbol_rate);
+	demod = demod_init(raw_samp, interp_factor, rrc_order, rrc_alpha, costas_bw, symbol_rate, mode);
 	demod_start(demod, out_fname);
 	if (!quiet) {
 		log("Demodulator initialized\n");

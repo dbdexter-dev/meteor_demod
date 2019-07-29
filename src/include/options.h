@@ -7,7 +7,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 
-#define SHORTOPTS "a:b:Bf:ho:O:qr:R:s:S:vw"
+#define SHORTOPTS "a:b:Bf:hm:o:O:qr:R:s:S:vw"
 
 struct option longopts[] = {
 	{ "alpha",        1, NULL, 'a' },
@@ -15,6 +15,7 @@ struct option longopts[] = {
 	{ "batch",        1, NULL, 'B' },
 	{ "fir-order",    1, NULL, 'f' },
 	{ "help",         0, NULL, 'h' },
+	{ "mode",         1, NULL, 'm' },
 	{ "output",       1, NULL, 'o' },
 	{ "oversamp",     1, NULL, 'O' },
 	{ "quiet",        0, NULL, 'q' },
