@@ -1,7 +1,8 @@
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
+#include <string.h>
 #include <time.h>
 #include "utils.h"
 
@@ -73,6 +74,13 @@ humanize(size_t count, char *buf)
 	}
 }
 
+/* Parse a mode string into the proper mode argument */
+ModScheme parse_mode(char *str) {
+	if (!strcmp(str, "qpsk")) return QPSK;
+	if (!strcmp(str, "oqpsk")) return OQPSK;
+	return QPSK;
+}
+
 /* From human readable format to integer */
 int
 dehumanize(const char *buf)
@@ -112,6 +120,8 @@ usage(const char *pname)
 	        "   -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50ms in TUI mode, 5000ms in batch mode)\n"
 	        "   -B, --batch             Do not use ncurses, write the message log to stdout instead\n"
 	        "   -q, --quiet             Do not print status information\n"
+	        "   -m, --mode <mode>       Specify the signal modulation scheme (default: qpsk)\n"
+	        "                           Available modes: qpsk (Meteor-M 2), oqpsk (Meteor-M 2-2)\n"
 	        "\n"
 	        "Advanced options:\n"
 	        "   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)\n"

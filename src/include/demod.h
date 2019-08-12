@@ -10,6 +10,7 @@
 #include "agc.h"
 #include "pll.h"
 #include "source.h"
+#include "utils.h"
 
 /* I/O chunk sizes */
 #define CHUNKSIZE 32768
@@ -21,6 +22,7 @@ typedef struct {
 	Costas *cst;
 	float sym_period;
 	unsigned sym_rate;
+	ModScheme mode;
 	pthread_t t;
 
 	pthread_mutex_t mutex;
@@ -29,7 +31,7 @@ typedef struct {
 	int8_t out_buf[SYM_CHUNKSIZE];
 } Demod;
 
-Demod*        demod_init(Source *src, unsigned interp_factor, unsigned rrc_order, float rrc_alpha, float pll_bw, unsigned sym_rate);
+Demod*        demod_init(Source *src, unsigned interp_factor, unsigned rrc_order, float rrc_alpha, float pll_bw, unsigned sym_rate, ModScheme mode);
 void          demod_start(Demod *self, const char *fname);
 void          demod_join(Demod *self);
 

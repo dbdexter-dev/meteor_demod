@@ -1,4 +1,4 @@
-VERSION=\"0.2.1\"
+VERSION=\"0.3-beta1\"
 
 export CFLAGS += -pipe -march=native -Wall -std=c99 -pedantic -D_XOPEN_SOURCE=700 -DVERSION=${VERSION}
 export LDFLAGS +=

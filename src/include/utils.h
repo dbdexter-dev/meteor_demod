@@ -10,6 +10,11 @@
 #include <complex.h>
 #include <stdlib.h>
 
+typedef enum {
+	QPSK,
+	OQPSK,
+} ModScheme;
+
 int8_t clamp(float x);
 float  float_clamp(float x, float max_abs);
 int    slice(float x);
@@ -18,6 +23,8 @@ void   humanize(size_t count, char *buf);
 int    dehumanize(const char *buf);
 char*  gen_fname(void);
 void   seconds_to_str(unsigned secs, char *buf);
+
+ModScheme parse_mode(char *str);
 
 void   usage(const char *pname);
 void   fatal(const char *msg);

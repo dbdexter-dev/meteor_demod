@@ -1,13 +1,10 @@
-# Meteor-M2 Demodulator
+# Meteor-M2 series demodulator
 
 This is a free, open-source LRPT demodulator for the Meteor-M2 Russian weather
-satellite. It supports reading from a I/Q recording in .wav format,
+satellite series. It supports reading from a I/Q recording in .wav format,
 and it outputs an 8-bit soft-QPSK file, from which you can generate an image
 with the help of LRPTofflineDecoder or
 [meteor\_decoder](https://github.com/artlav/meteor_decoder).
-
-Please note that, to get the best decoding performance, you should downsample
-the I/Q recording to about 140KHz.
 
 ## Compling and installing
 
@@ -25,6 +22,9 @@ Usage: meteor_demod [options] file_in
    -R, --refresh-rate <ms> Refresh the status screen every <ms> ms (default: 50ms in TUI mode, 5000ms in batch mode)
    -B, --batch             Do not use ncurses, write the message log to stdout instead
    -q, --quiet             Do not print status information
+   -m, --mode <mode>       Specify the signal modulation scheme (default: qpsk)
+                           Available modes: qpsk (Meteor-M 2), oqpsk (Meteor-M 2-2)
+
 
 Advanced options:
    -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)
