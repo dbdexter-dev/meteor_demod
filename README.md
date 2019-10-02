@@ -25,15 +25,14 @@ Usage: meteor_demod [options] file_in
    -m, --mode <mode>       Specify the signal modulation scheme (default: qpsk)
                            Available modes: qpsk (Meteor-M 2), oqpsk (Meteor-M 2-2)
 
+   -h, --help              Print this help screen
+   -v, --version           Print version info
 
 Advanced options:
    -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)
    -a, --alpha <alpha>     Set the RRC filter alpha to <alpha> (default: 0.6)
    -f, --fir-order <ord>   Set the RRC filter order to <ord> (default: 64)
    -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 4)
-
-   -h, --help              Print this help screen
-   -v, --version           Print version info
 ```
 
 ### Advanced options explanation
