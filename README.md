@@ -6,7 +6,7 @@ and it outputs an 8-bit soft-QPSK file, from which you can generate an image
 with the help of LRPTofflineDecoder or
 [meteor\_decoder](https://github.com/artlav/meteor_decoder).
 
-## Compling and installing
+## Compiling and installing
 
 As usual, type `make` to compile the project, `make install` to install the
 binary to /usr/bin/. A `debug` target is available if you want to keep the debug
