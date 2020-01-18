@@ -123,14 +123,14 @@ usage(const char *pname)
 	        "   -m, --mode <mode>       Specify the signal modulation scheme (default: qpsk)\n"
 	        "                           Available modes: qpsk (Meteor-M 2), oqpsk (Meteor-M 2-2)\n"
 	        "\n"
+	        "   -h, --help              Print this help screen\n"
+	        "   -v, --version           Print version info\n"
+	        "\n"
 	        "Advanced options:\n"
 	        "   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 100)\n"
 	        "   -a, --alpha <alpha>     Set the RRC filter alpha to <alpha> (default: 0.6)\n"
 	        "   -f, --fir-order <ord>   Set the RRC filter order to <ord> (default: 64)\n"
 	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 4)\n"
-	        "\n"
-	        "   -h, --help              Print this help screen\n"
-	        "   -v, --version           Print version info\n"
 	        );
 	exit(0);
 }
