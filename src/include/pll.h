@@ -14,7 +14,7 @@
 #define COSTAS_DAMP 1/M_SQRT2
 #define COSTAS_INIT_FREQ 0.001
 #define FREQ_MAX 0.8
-#define AVG_WINSIZE 2500
+#define AVG_WINSIZE 25000
 
 typedef struct {
 	float nco_phase, nco_freq;
