@@ -61,17 +61,17 @@ costas_correct_phase(Costas *self, float err)
 	/* Detect whether the PLL is locked, and decrease the BW if it is */
 	if (self->mode == OQPSK) {
 		if (!self->locked && self->moving_avg < 0.85) {
-			costas_recompute_coeffs(self, self->damping, self->bw/3);
+			costas_recompute_coeffs(self, self->damping, self->bw/10);
 			self->locked = 1;
 		} else if (self->locked && self->moving_avg > 0.9) {
 			costas_recompute_coeffs(self, self->damping, self->bw);
 			self->locked = 0;
 		}
 	} else if (self->mode == QPSK) {
-		if (!self->locked && self->moving_avg < 0.5) {
-			costas_recompute_coeffs(self, self->damping, self->bw/3);
+		if (!self->locked && self->moving_avg < 0.77) {
+			costas_recompute_coeffs(self, self->damping, self->bw/10);
 			self->locked = 1;
-		} else if (self->locked && self->moving_avg > 0.55) {
+		} else if (self->locked && self->moving_avg > 0.82) {
 			costas_recompute_coeffs(self, self->damping, self->bw);
 			self->locked = 0;
 		}

@@ -7,6 +7,7 @@
 #define METEOR_DEMOD_H
 
 #include <pthread.h>
+#include <stdbool.h>
 #include "agc.h"
 #include "pll.h"
 #include "source.h"
@@ -29,6 +30,7 @@ typedef struct {
 	unsigned bytes_out_count;
 	volatile int thr_is_running;
 	int8_t out_buf[SYM_CHUNKSIZE];
+	bool writeStarted;
 } Demod;
 
 Demod*        demod_init(Source *src, unsigned interp_factor, unsigned rrc_order, float rrc_alpha, float pll_bw, unsigned sym_rate, ModScheme mode);

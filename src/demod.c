@@ -57,6 +57,7 @@ demod_start(Demod *self, const char *fname)
 
 
 	args->self = self;
+	args->self->writeStarted = false;
 	if (!(args->fd = fopen(fname, "wb"))) {
 		fatal("Could not create/open output file");
 		free(args);
@@ -202,16 +203,24 @@ demod_thr_qpsk(void* x)
 				/* Costas loop frequency/phase tuning */
 				cur = costas_mix(self->cst, cur);
 				costas_correct_phase(self->cst, costas_delta(cur, cur));
+				
+				if(self->cst->locked) {
+					self->writeStarted = true;
+				}
 
 				/* Append the new samples to the output file */
-				demod_write_symbol(self, args->fd, cur, 0);
+				if(self->writeStarted) {
+					demod_write_symbol(self, args->fd, cur, 0);
+				}
 			}
 			resync_offset++;
 		}
 	}
 
 	/* Write the remaining bytes */
-	demod_write_symbol(self, args->fd, 0, 1);
+	if(self->writeStarted) {
+		demod_write_symbol(self, args->fd, 0, 1);
+	}
 	fclose(args->fd);
 
 	free(x);
@@ -259,13 +268,22 @@ demod_thr_oqpsk(void *x)
 				costas_correct_phase(self->cst, costas_delta(inphase, quad));
 				tmp = crealf(inphase) + I * cimagf(quad);
 
-				demod_write_symbol(self, args->fd, tmp, 0);
+				if(self->cst->locked) {
+					self->writeStarted = true;
+				}
+
+				/* Append the new samples to the output file */
+				if(self->writeStarted) {
+					demod_write_symbol(self, args->fd, cur, 0);
+				}
 			}
 			resync_offset++;
 		}
 	}
-
-	demod_write_symbol(self, args->fd, 0, 1);
+    
+    if(self->writeStarted) {
+        demod_write_symbol(self, args->fd, 0, 1);
+    }
 	fclose(args->fd);
 
 	free(x);
