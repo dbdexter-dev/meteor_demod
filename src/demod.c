@@ -209,7 +209,7 @@ demod_thr_qpsk(void* x)
 				}
 
 				/* Append the new samples to the output file */
-				if(self->cst->locked) {
+				if(self->writeStarted) {
 					demod_write_symbol(self, args->fd, cur, 0);
 				}
 			}
@@ -218,7 +218,7 @@ demod_thr_qpsk(void* x)
 	}
 
 	/* Write the remaining bytes */
-	if(self->cst->locked) {
+	if(self->writeStarted) {
 		demod_write_symbol(self, args->fd, 0, 1);
 	}
 	fclose(args->fd);
@@ -268,13 +268,22 @@ demod_thr_oqpsk(void *x)
 				costas_correct_phase(self->cst, costas_delta(inphase, quad));
 				tmp = crealf(inphase) + I * cimagf(quad);
 
-				demod_write_symbol(self, args->fd, tmp, 0);
+				if(self->cst->locked) {
+					self->writeStarted = true;
+				}
+
+				/* Append the new samples to the output file */
+				if(self->writeStarted) {
+					demod_write_symbol(self, args->fd, cur, 0);
+				}
 			}
 			resync_offset++;
 		}
 	}
-
-	demod_write_symbol(self, args->fd, 0, 1);
+    
+    if(self->writeStarted) {
+        demod_write_symbol(self, args->fd, 0, 1);
+    }
 	fclose(args->fd);
 
 	free(x);
