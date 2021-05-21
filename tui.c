@@ -52,7 +52,7 @@ tui_init(unsigned upd_interval)
 
 	windows_init(rows, cols);
 	print_banner(tui.banner_top);
-	tui_update_pll(0, 0, 1);
+	tui_update_pll(0, 0, 0, 1);
 	iq_draw_quadrants(tui.iq);
 }
 
@@ -82,7 +82,7 @@ tui_handle_resize()
 	mvwin(tui.filein, 6, iq_size+2);
 	wresize(tui.dataout, 2, nc - iq_size - 2);
 	mvwin(tui.dataout, 9, iq_size+2);
-	wresize(tui.infowin, MIN(5, nr-iq_size/2-4), nc);
+	wresize(tui.infowin, nr-iq_size/2-4, nc);
 	mvwin(tui.infowin, MAX(12, 2+iq_size/2+1), 0);
 
 	print_banner(tui.banner_top);
@@ -138,7 +138,7 @@ tui_print_info(const char *msg, ...)
 
 /* Update the PLL info displayed */
 void
-tui_update_pll(float freq, int islocked, float gain)
+tui_update_pll(float freq, float rate, int islocked, float gain)
 {
 	assert(tui.pll);
 
@@ -147,8 +147,8 @@ tui_update_pll(float freq, int islocked, float gain)
 	wattrset(tui.pll, A_BOLD);
 	wprintw(tui.pll, "PLL info\n");
 	wattroff(tui.pll, A_BOLD);
-	wprintw(tui.pll, "Gain\tCarrier Freq\tStatus\n");
-	wprintw(tui.pll, "%.3f\t%+7.1f Hz\t", gain, freq);
+	wprintw(tui.pll, "Gain\tCarrier Freq\tSymbol rate\tStatus\n");
+	wprintw(tui.pll, "%.3f\t%+7.1f Hz\t%7.1f Hz\t", gain, freq, rate);
 	if (islocked) {
 		wattrset(tui.pll, COLOR_PAIR(PAIR_GREEN_DEF));
 		wprintw(tui.pll, "%s", "Locked");
@@ -191,6 +191,8 @@ tui_draw_constellation(const int8_t *dots, unsigned count)
 		case '+':
 			waddch(tui.iq, '#');
 			break;
+		case '#':
+			break;
 		default:
 			waddch(tui.iq, '.');
 			break;
@@ -209,7 +211,7 @@ tui_update_file_in(unsigned samplerate, uint64_t done, uint64_t total)
 
 	assert(tui.filein);
 
-	perc = (done/(float)total)*100;
+	perc = total ? (done/(float)total)*100 : 0;
 
 	total /= samplerate;
 	done /= samplerate;
@@ -288,12 +290,12 @@ windows_init(int rows, int cols)
 
 	iq_size = (MIN(CONSTELL_MAX, MIN(rows, cols/2))) | 0x3;
 
-	tui.banner_top = newwin(1, cols, 0, 0);
+	tui.banner_top = newwin(rows, cols, 0, 0);
 	tui.iq = newwin(iq_size/2, iq_size, 2, 0);
 	tui.pll = newwin(3, cols-iq_size-2, 2, iq_size+2);
 	tui.filein = newwin(2, cols-iq_size-2, 6, iq_size+2);
 	tui.dataout = newwin(2, cols-iq_size-2, 9, iq_size+2);
-	tui.infowin = newwin(MIN(5, rows-iq_size/2-4), cols,
+	tui.infowin = newwin(rows-iq_size/2-4, cols,
 	                     MAX(12, 2+iq_size/2+1), 0);
 
 	scrollok(tui.infowin, TRUE);

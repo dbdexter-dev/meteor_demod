@@ -15,7 +15,7 @@ void tui_handle_resize(void);
 int  tui_process_input(void);
 
 int  tui_print_info(const char *msg, ...);
-void tui_update_pll(float freq, int islocked, float gain);
+void tui_update_pll(float freq, float rate, int islocked, float gain);
 void tui_draw_constellation(const int8_t *dots, unsigned count);
 void tui_update_file_in(unsigned rate, uint64_t done, uint64_t duration);
 void tui_update_data_out(unsigned nbytes);
