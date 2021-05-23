@@ -14,16 +14,14 @@ static float _prev;
 static float _phase, _freq;                /* Symbol phase and rate estimate */
 static float _freq_max_dev, _center_freq;  /* Max freq deviation and center freq */
 static float _alpha, _beta;                /* Proportional and integral loop gain */
-static int intersample;
 
 void
-timing_init(float sym_freq, float bw, int produce_intersample)
+timing_init(float sym_freq, float bw)
 {
 	_freq = sym_freq;
 	_center_freq = _freq;
 	_freq_max_dev = _freq / (1<<FREQ_DEV_EXP);
 
-	intersample = produce_intersample;
 
 	update_alpha_beta(1, bw);
 }
@@ -33,12 +31,27 @@ float mm_omega() {return _freq;}
 int
 advance_timeslot()
 {
+	_phase += _freq;
+
+	/* Check if the timeslot is right */
+	return _phase >= 2*M_PI;
+}
+
+int
+advance_timeslot_dual()
+{
+	static int state = 1;
+	int ret;
+
 	/* Phase up */
 	_phase += _freq;
 
 	/* Check if the timeslot is right */
-	if (intersample && _phase >= M_PI && _phase - _freq < M_PI) return 1;
-	if (_phase >= 2*M_PI) return 2;
+	if (_phase >= state * M_PI) {
+		ret = state;
+		state = (state % 2) + 1;
+		return ret;
+	}
 
 	return 0;
 }

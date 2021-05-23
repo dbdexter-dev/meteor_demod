@@ -10,7 +10,7 @@ demod_init(float pll_bw, float sym_bw, int samplerate, int symrate, int interp_f
 	const int multiplier = oqpsk ? 1 : 2;   /* OQPSK uses two samples per symbol */
 
 	pll_init(2*M_PI*pll_bw/(multiplier * symrate), oqpsk);
-	timing_init(2*M_PI*symrate/(samplerate*interp_factor), sym_bw/interp_factor, oqpsk);
+	timing_init(2*M_PI*symrate/(samplerate*interp_factor), sym_bw/interp_factor);
 	filter_init_rrc(&_rrc_filter, rrc_order, (float)samplerate/symrate, RRC_ALPHA, interp_factor);
 }
 
@@ -59,7 +59,7 @@ demod_oqpsk(float complex *sample)
 	/* Check if this sample is in the correct timeslot */
 	ret = 0;
 	for (i=0; i<_rrc_filter.interp_factor; i++) {
-		switch (advance_timeslot()) {
+		switch (advance_timeslot_dual()) {
 			case 0:
 				break;
 			case 1:
