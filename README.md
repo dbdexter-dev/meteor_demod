@@ -10,7 +10,7 @@ with the help of LRPTofflineDecoder,
 
 Features:
 - Support for regular (72k, `-r 72000`) and interleaved (80k, `-r 80000`) modes
-- Support for QPSK and OQPSK (`-d`) modulation schemes
+- Support for QPSK and OQPSK modulation schemes
 - Can read samples from stdin (pass `-` in place of a filename)
 - Can output samples to stdout (`--stdout`, disables all status indicators)
 
@@ -75,7 +75,7 @@ Live demodulation
 -----------------
 
 ```
-rtl_sdr -s 250000 -f 137.1M -g <gain> -p <ppm> - | meteor_demod -s 250000 -
+rtl_sdr -s 250000 -f 137.1M -g <gain> -p <ppm> - | meteor_demod --bps 8 -s 250000 -
 ```
 
 
@@ -85,14 +85,14 @@ If you want to see the constellation diagram while demodulating:
 ```
 mkfifo /tmp/raw_samples
 rtl_sdr -s 250000 -f 137.1M -g <gain> -p <ppm> /tmp/raw_samples &
-meteor_demod -s 250000 /tmp/raw_samples
+meteor_demod --bps 8 -s 250000 /tmp/raw_samples
 rm /tmp/raw_samples
 ```
 
 With a decoder that supports reading symbols from stdin you can even decode live:
 
 ```
-rtl_sdr -s 250000 -f 137.1M -g <gain> -p <ppm> - | meteor_demod -s 250000 --stdout - | meteor_decode -o live.bmp -
+rtl_sdr -s 250000 -f 137.1M -g <gain> -p <ppm> - | meteor_demod --bps 8 -s 250000 --stdout - | meteor_decode -o live.bmp -
 ```
 
 

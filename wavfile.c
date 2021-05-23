@@ -57,7 +57,7 @@ wav_read(float complex *dst, int bps, FILE *fd)
 	switch (bps) {
 		case 8:
 			/* Unsigned byte */
-			tmp = _buffer.bytes[_offset]-128 + I*(_buffer.bytes[_offset+1]-128);
+			tmp = (int)_buffer.bytes[_offset]-128 + I*((int)_buffer.bytes[_offset+1]-128);
 			break;
 		case 16:
 			/* Signed short */
