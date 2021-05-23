@@ -1,9 +1,10 @@
 #include <math.h>
 #include "pll.h"
 #include "utils.h"
+#include "sincos.h"
 
 #define FREQ_MAX 0.3
-#define ERR_POLE 0.0001
+#define ERR_POLE 0.001
 #define M_1_SQRT2 0.7071067811865475
 
 
@@ -44,8 +45,15 @@ int pll_get_locked() { return _locked; }
 float complex
 pll_mix(float complex sample)
 {
-	sample *= cexp(-I*_phase);  /* Mix sample */
+	const float sine = fast_sin(-_phase);
+	const float cosine = fast_cos(-_phase);
+	const float re = crealf(sample);
+	const float im = cimagf(sample);
+
+	/* Mix sample */
+	sample = (re*cosine - im*sine) + I*(re*sine + im*cosine);
 	_phase += _freq;            /* Advance phase based on frequency */
+	if (_phase >= 2*M_PI) _phase -= 2*M_PI;
 
 	return sample;
 }
@@ -67,12 +75,11 @@ update_estimate(float error)
 	_phase = fmod(_phase + _alpha*error, 2*M_PI);
 	_freq += _beta*error;
 
-
 	/* Lock detection */
 	_err = _err*(1-ERR_POLE) + fabs(error)*ERR_POLE;
-	if (_err < 90 && !_locked) {
+	if (_err < 85 && !_locked) {
 		_locked = 1;
-	} else if (_err > 100 && _locked) {
+	} else if (_err > 105 && _locked) {
 		_locked = 0;
 	}
 

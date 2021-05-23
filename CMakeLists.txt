@@ -31,6 +31,7 @@ set(COMMON_SOURCES
 	dsp/filter.c dsp/filter.h
 	dsp/pll.c dsp/pll.h
 	dsp/timing.c dsp/timing.h
+	dsp/sincos.c dsp/sincos.h
 
 	demod.c demod.h
 	utils.c utils.h
