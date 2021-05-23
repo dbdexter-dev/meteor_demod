@@ -6,7 +6,12 @@
 #include "wavfile.h"
 
 #define FILE_BUFFER_SIZE 32768
-static char _buffer[FILE_BUFFER_SIZE];
+static union {
+	uint8_t bytes[FILE_BUFFER_SIZE];
+	int16_t words[FILE_BUFFER_SIZE/2];
+	float floats[FILE_BUFFER_SIZE/4];
+} _buffer;
+static size_t _offset;
 
 struct wave_header {
 	char _riff[4];          /* Literally RIFF */
@@ -30,8 +35,6 @@ wav_parse(FILE *fd, int *samplerate, int *bps)
 {
 	struct wave_header header;
 
-	setvbuf(fd, _buffer, _IOFBF, FILE_BUFFER_SIZE);
-
 	if (!(fread(&header, sizeof(struct wave_header), 1, fd))) return 1;
 
 	if (strncmp(header._riff, "RIFF", 4)) return 1;
@@ -48,30 +51,29 @@ int
 wav_read(float complex *dst, int bps, FILE *fd)
 {
 	float complex tmp;
-	float iq32[2];
-	uint8_t iq8[2];
-	int16_t iq16[2];
+
+	if (!_offset && !fread(&_buffer.bytes, sizeof(_buffer.bytes), 1, fd)) return 0;
 
 	switch (bps) {
 		case 8:
 			/* Unsigned byte */
-			if (!fread(&iq8, sizeof(iq8), 1, fd)) return 0;
-			tmp = iq8[0]-128 + I * (iq8[1]-128);
+			tmp = _buffer.bytes[_offset]-128 + I*(_buffer.bytes[_offset+1]-128);
 			break;
 		case 16:
 			/* Signed short */
-			if (!fread(&iq16, sizeof(iq16), 1, fd)) return 0;
-			tmp = iq16[0] + I * iq16[1];
+			tmp = _buffer.words[_offset] + I*_buffer.words[_offset+1];
 			break;
 		case 32:
 			/* Float */
-			if (!fread(&iq32, sizeof(iq32), 1, fd)) return 0;
-			tmp = iq32[0] + I * iq32[1];
+			tmp = _buffer.floats[_offset] + I*_buffer.floats[_offset+1];
 			break;
 		default:
 			return 0;
 			break;
 	}
+
+	_offset += 2;
+	if (_offset*bps/8 >= sizeof(_buffer)) _offset = 0;
 
 	*dst = tmp;
 	return 1;
