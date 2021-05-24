@@ -34,7 +34,7 @@ advance_timeslot()
 	_phase += _freq;
 
 	/* Check if the timeslot is right */
-	return _phase >= 2*M_PI;
+	return _phase >= 2*(float)M_PI;
 }
 
 int
@@ -47,7 +47,7 @@ advance_timeslot_dual()
 	_phase += _freq;
 
 	/* Check if the timeslot is right */
-	if (_phase >= state * M_PI) {
+	if (_phase >= state * (float)M_PI) {
 		ret = state;
 		state = (state % 2) + 1;
 		return ret;

@@ -64,9 +64,9 @@ demod_oqpsk(float complex *sample)
 				break;
 			case 1:
 				/* Intersample */
-				inphase = filter_get(&_rrc_filter, i);
-				inphase = agc_apply(inphase);
-				inphase = pll_mix(inphase);
+				out = filter_get(&_rrc_filter, i);
+				out = agc_apply(out);
+				inphase = pll_mix(out);
 				break;
 			case 2:
 				/* Actual sample */

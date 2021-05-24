@@ -3,9 +3,9 @@
 #include "utils.h"
 #include "sincos.h"
 
-#define FREQ_MAX 0.3
-#define ERR_POLE 0.001
-#define M_1_SQRT2 0.7071067811865475
+#define FREQ_MAX 0.3f
+#define ERR_POLE 0.001f
+#define M_1_SQRT2 0.7071067811865475f
 
 
 static void update_estimate(float error);

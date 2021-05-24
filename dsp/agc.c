@@ -3,8 +3,8 @@
 #include "utils.h"
 
 #define FLOAT_TARGET_MAG 190
-#define BIAS_POLE 0.001
-#define GAIN_POLE 0.0001
+#define BIAS_POLE 0.001f
+#define GAIN_POLE 0.0001f
 
 static float _float_gain = 1;
 static float complex _float_bias = 0;

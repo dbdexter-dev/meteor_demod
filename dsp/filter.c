@@ -52,13 +52,13 @@ filter_get(Filter *flt, unsigned phase)
 	j = (flt->interp_factor - phase - 1)*flt->size;
 
 	/* Chunk 1: from current position to end */
-	for (i=flt->idx; i<flt->size; i++) {
-		result += flt->mem[i] * flt->coeffs[j++];
+	for (i=flt->idx; i<flt->size; i++, j++) {
+		result += flt->mem[i] * flt->coeffs[j];
 	}
 
 	/* Chunk 2: from start to current position - 1 */
-	for (i=0; i<flt->idx; i++) {
-		result += flt->mem[i] * flt->coeffs[j++];
+	for (i=0; i<flt->idx; i++, j++) {
+		result += flt->mem[i] * flt->coeffs[j];
 	}
 
 	return result;
