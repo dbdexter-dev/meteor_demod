@@ -17,7 +17,7 @@ static float _freq, _phase;
 static float _alpha, _beta;
 static float _lut_tanh[32];
 static float _err;
-static int _locked;
+static int _locked, _locked_once;
 static float _bw;
 static float _fmax;
 
@@ -28,7 +28,7 @@ pll_init(float bw, int oqpsk)
 
 	_freq = 0;
 	_phase = 0;
-	_locked = 0;
+	_locked = _locked_once = 0;
 	_err = 1000;
 	_bw = bw;
 	_fmax = (oqpsk ? FREQ_MAX/2 : FREQ_MAX);
@@ -41,6 +41,7 @@ pll_init(float bw, int oqpsk)
 
 float pll_get_freq() { return _freq; }
 int pll_get_locked() { return _locked; }
+int pll_did_lock_once() { return _locked_once; }
 
 float complex
 pll_mix(float complex sample)
@@ -79,6 +80,7 @@ update_estimate(float error)
 	_err = _err*(1-ERR_POLE) + fabs(error)*ERR_POLE;
 	if (_err < 85 && !_locked) {
 		_locked = 1;
+		_locked_once = 1;
 	} else if (_err > 105 && _locked) {
 		_locked = 0;
 	}

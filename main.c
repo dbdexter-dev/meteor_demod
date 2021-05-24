@@ -299,7 +299,8 @@ thread_process(void *x)
 			_symbols_ring[ring_idx++] = MAX(-127, MIN(127, cimagf(sample)/2));
 
 			if (ring_idx >= LEN(_symbols_ring)) {
-				fwrite(_symbols_ring, RINGSIZE, 2, soft_file);
+				/* Only write symbols after the PLL locked once */
+				if (pll_did_lock_once()) fwrite(_symbols_ring, RINGSIZE, 2, soft_file);
 				ring_idx = 0;
 				parms->bytes_out += LEN(_symbols_ring);
 			}

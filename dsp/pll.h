@@ -24,6 +24,13 @@ float pll_get_freq();
 int pll_get_locked();
 
 /**
+ * Check whether the PLL locked at least once in the past
+ *
+ * @return 0 if it never locked, 1 if it did
+ */
+int pll_did_lock_once();
+
+/**
  * Update the carrier estimate based on a sample pair
  * (for QPSK, sample = cosample)
  *
