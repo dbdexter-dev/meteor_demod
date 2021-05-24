@@ -76,6 +76,7 @@ usage(const char *pname)
 	        "\n"
 	        "Advanced options:\n"
 	        "   -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 1)\n"
+	        "   -d, --freq-delta <freq> Set the maximum carrier deviation to <freq> (default: +-3.5kHz)\n"
 	        "   -f, --fir-order <ord>   Set the RRC filter order to <ord> (default: 32)\n"
 	        "   -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 5)\n"
 	        );

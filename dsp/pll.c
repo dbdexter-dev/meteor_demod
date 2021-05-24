@@ -22,16 +22,20 @@ static float _bw;
 static float _fmax;
 
 void
-pll_init(float bw, int oqpsk)
+pll_init(float bw, int oqpsk, float freq_max)
 {
 	int i;
+
+	/* Use default if freq_max is negative, use 1 if freq_max > 1 */
+	if (freq_max < 0) freq_max = FREQ_MAX;
+	else freq_max = MIN(1.0f, freq_max);
 
 	_freq = 0;
 	_phase = 0;
 	_locked = _locked_once = 0;
 	_err = 1000;
 	_bw = bw;
-	_fmax = (oqpsk ? FREQ_MAX/2 : FREQ_MAX);
+	_fmax = (oqpsk ? freq_max/2 : freq_max);
 
 	for (i=0; i<(int)LEN(_lut_tanh); i++) {
 		_lut_tanh[i] = (float)tanh(i-16);

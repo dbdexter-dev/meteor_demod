@@ -5,11 +5,11 @@
 static Filter _rrc_filter;
 
 void
-demod_init(float pll_bw, float sym_bw, int samplerate, int symrate, int interp_factor, int rrc_order, int oqpsk)
+demod_init(float pll_bw, float sym_bw, int samplerate, int symrate, int interp_factor, int rrc_order, int oqpsk, float freq_max)
 {
 	const int multiplier = oqpsk ? 1 : 2;   /* OQPSK uses two samples per symbol */
 
-	pll_init(2*M_PI*pll_bw/(multiplier * symrate), oqpsk);
+	pll_init(2*M_PI*pll_bw/(multiplier * symrate), oqpsk, freq_max);
 	timing_init(2*M_PI*symrate/(samplerate*interp_factor), sym_bw/interp_factor);
 	filter_init_rrc(&_rrc_filter, rrc_order, (float)samplerate/symrate, RRC_ALPHA, interp_factor);
 }

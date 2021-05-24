@@ -16,7 +16,7 @@
 #include "tui.h"
 #endif
 
-#define SHORTOPTS "a:Bb:f:hm:o:O:qR:r:s:S:v"
+#define SHORTOPTS "a:Bb:d:f:hm:o:O:qR:r:s:S:v"
 #define RINGSIZE 512
 
 struct thropts {
@@ -35,7 +35,7 @@ static int8_t _symbols_ring[2*RINGSIZE];
 static struct option longopts[] = {
 	{ "batch",        0, NULL, 'B' },
 	{ "pll-bw",       1, NULL, 'b' },
-	{ "diff",         0, NULL, 'd' },
+	{ "freq-delta",   1, NULL, 'd' },
 	{ "fir-order",    1, NULL, 'f' },
 	{ "help",         0, NULL, 'h' },
 	{ "mode",         1, NULL, 'm' },
@@ -68,6 +68,7 @@ main(int argc, char *argv[])
 	int interp_factor = INTERP_FACTOR;
 	int quiet = 0;
 	float symrate = SYM_RATE;
+	float freq_max_delta = -1;
 	int (*demod)(float complex *sample) = demod_qpsk;
 	int (*message)(const char *fmt, ...) = printf;
 	int batch = 0;
@@ -89,6 +90,9 @@ main(int argc, char *argv[])
 				break;
 			case 'B':
 				batch = 1;
+				break;
+			case 'd':
+				freq_max_delta = atof(optarg);
 				break;
 			case 'f':
 				rrc_order = atoi(optarg);
@@ -128,6 +132,8 @@ main(int argc, char *argv[])
 				return 1;
 		}
 	}
+
+	freq_max_delta = freq_max_delta * (2*M_PI)/symrate;
 
 	if (argc - optind < 1) {
 		usage(argv[0]);
@@ -178,7 +184,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Initialize subsystems */
-	demod_init(pll_bw, SYM_BW, samplerate, symrate, interp_factor, rrc_order, demod == demod_oqpsk);
+	demod_init(pll_bw, SYM_BW, samplerate, symrate, interp_factor, rrc_order, demod == demod_oqpsk, freq_max_delta);
 
 	/* Get file length */
 	tmp = ftell(samples_file);

@@ -24,8 +24,9 @@
  * @param interp_factor filter interpolation factor
  * @param rrc_order root-raised cosine order
  * @param oqpsk 1 if oqpsk, 0 if qpsk
+ * @param freq_max max carrier frequency deviation, see pll.h for more info
  */
-void demod_init(float pll_bw, float sym_bw, int samplerate, int symrate, int interp_factor, int rrc_order, int oqpsk);
+void demod_init(float pll_bw, float sym_bw, int samplerate, int symrate, int interp_factor, int rrc_order, int oqpsk, float freq_max);
 
 /**
  * Deinitialize demodulator

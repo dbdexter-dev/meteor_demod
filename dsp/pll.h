@@ -6,8 +6,11 @@
  * Initialize phase locked loop
  *
  * @param bw bandwidth of the loop filter
+ * @param oqpsk 0 if QPSK modulation, 1 if OQPSK
+ * @param freq_max maximum carrier deviation, in (1/symbol_rate) rad/s
+ *        e.g. freq_max=0.3 -> +-3.5kHz @72ksym/s, +-3.8kHz @80ksym/s
  */
-void  pll_init(float bw, int oqpsk);
+void  pll_init(float bw, int oqpsk, float freq_max);
 
 /**
  * Get the PLL local oscillator frequency

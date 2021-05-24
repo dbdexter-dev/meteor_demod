@@ -34,6 +34,7 @@ Usage info
 ```
 Usage: meteor_demod [options] file_in
            -B, --batch             Disable TUI and all control characters (aka "script-friendly mode")
+           -d, --freq-delta <freq> Set the maximum carrier devation to <freq> (default: +-3.5kHz)
            -m, --mode <mode>       Specify the signal modulation scheme (default: qpsk, valid modes: qpsk, oqpsk)
            -o, --output <file>     Output decoded symbols to <file>
            -q, --quiet             Do not print status information
@@ -45,6 +46,7 @@ Usage: meteor_demod [options] file_in
 
            -h, --help              Print this help screen
            -v, --version           Print version info
+
         Advanced options:
            -b, --pll-bw <bw>       Set the PLL bandwidth to <bw> (default: 1)
            -f, --fir-order <ord>   Set the RRC filter order to <ord> (default: 32)
