@@ -56,6 +56,35 @@ seconds_to_str(unsigned secs, char *buf)
 	sprintf(buf, "%02u:%02u:%02u", h, m, s);
 }
 
+float
+human_to_float(const char *human)
+{
+	int ret;
+	float tmp;
+	const char *suffix;
+
+	tmp = atof(human);
+
+	/* Search for the suffix */
+	for (suffix=human; (*suffix >= '0' && *suffix <= '9') || *suffix == '.'; suffix++);
+
+	switch(*suffix) {
+		case 'k':
+		case 'K':
+			ret = tmp * 1000;
+			break;
+		case 'M':
+			ret = tmp * 1000000;
+			break;
+		default:
+			ret = tmp;
+			break;
+	}
+
+	return ret;
+
+}
+
 void
 usage(const char *pname)
 {

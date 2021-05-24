@@ -40,7 +40,7 @@ char* gen_fname();
  * @param value value to
  * @param buf buffer to write the resulting string to
  */
-void  humanize(size_t value, char *buf);
+void humanize(size_t value, char *buf);
 
 /**
  * Format a number of seconds into HH:MM:SS format
@@ -48,7 +48,16 @@ void  humanize(size_t value, char *buf);
  * @param secs seconds
  * @param buf buffer to write the resulting string to
  */
-void  seconds_to_str(unsigned secs, char *buf);
+void seconds_to_str(unsigned secs, char *buf);
+
+/**
+ * Convert a "human-readable" number into a float
+ * e.g. 137.1M = 137100.0
+ *
+ * @param human string to parse
+ * @return parsed float
+ */
+float human_to_float(const char *human);
 
 /**
  * Write usage info to stdout

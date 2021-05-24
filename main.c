@@ -86,13 +86,13 @@ main(int argc, char *argv[])
 				stdout_mode = 1;
 				break;
 			case 'b':
-				pll_bw = atof(optarg);
+				pll_bw = human_to_float(optarg);
 				break;
 			case 'B':
 				batch = 1;
 				break;
 			case 'd':
-				freq_max_delta = atof(optarg);
+				freq_max_delta = human_to_float(optarg);
 				break;
 			case 'f':
 				rrc_order = atoi(optarg);
@@ -116,10 +116,10 @@ main(int argc, char *argv[])
 				update_interval = atoi(optarg);
 				break;
 			case 'r':
-				symrate = atof(optarg);
+				symrate = human_to_float(optarg);
 				break;
 			case 's':
-				samplerate = atoi(optarg);
+				samplerate = human_to_float(optarg);
 				break;
 			case 'S':
 				bps = atoi(optarg);
