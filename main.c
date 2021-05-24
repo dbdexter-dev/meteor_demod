@@ -148,6 +148,7 @@ main(int argc, char *argv[])
 	/* Open input file */
 	if (!strcmp(argv[optind], "-")) {
 		samples_file = stdin;
+		batch = 1;          /* Ncurses doesn't play nice with stdin samples */
 	} else if (!(samples_file = fopen(argv[optind], "rb"))) {
 		fprintf(stderr, "Could not open input file\n");
 		return 1;

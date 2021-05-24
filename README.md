@@ -51,48 +51,40 @@ Usage: meteor_demod [options] file_in
            -O, --oversamp <mult>   Set the interpolation factor to <mult> (default: 5)
 ```
 
-Typical use cases:
-- Meteor-M2: `meteor_demod <input.wav>`
-- Meteor-M2.2, non-interleaved: `meteor_demod -d <input.wav>`
-- Meteor-M2.2, interleaved: `meteor_demod -r 80000 -d <input.wav>`
-
-
 Advanced options explanation
 ----------------------------
 
 - `-b, --pll-bw`: higher = potentially faster carrier acquisition, but worse
   tracking performance if the signal is weak. Does not affect CPU usage.
 - `-f, --fir-order`: higher = more accurate signal filtering, but higher CPU usage.
-  16-32 is a good range, above 64 is overkill.
-- `-O, --oversamp`: higher = more accurate symbol timing recovery. CPU usage
-  more or less unaffected, but causes more cache misses and slows down the
-  demodulation.  Can be reduced if input sampling rate is high, although it's
+  16-32 is a good range, above 64 is most likely overkill.
+- `-O, --oversamp`: higher = more accurate symbol timing recovery, but higher
+  CPU usage. Can be reduced if input sampling rate is high, although it's
   more efficient to use a low sampling rate and a high oversampling value than
   vice-versa.
 
 
 Live demodulation
 -----------------
+Starting from v1.0, you can live demodulate on a toaster if that's your thing
+(~35% peak CPU usage on a Raspberry Pi Zero):
 
 ```
-rtl_sdr -s 250000 -f 137.1M -g <gain> -p <ppm> - | meteor_demod --bps 8 -s 250000 -
+rtl_sdr -s 230000 -f 137.1M -g <gain> -p <ppm> - | meteor_demod --bps 8 -s 230000 -B -
 ```
 
-
-If you want to see the constellation diagram while demodulating:
-
+If you want to see the constellation diagram while demodulating live:
 
 ```
 mkfifo /tmp/raw_samples
-rtl_sdr -s 250000 -f 137.1M -g <gain> -p <ppm> /tmp/raw_samples &
-meteor_demod --bps 8 -s 250000 /tmp/raw_samples
+meteor_demod --bps 8 -s 230000 /tmp/raw_samples &
+rtl_sdr -s 230000 -f 137.1M -g <gain> -p <ppm> /tmp/raw_samples
 rm /tmp/raw_samples
 ```
 
-With a decoder that supports reading symbols from stdin you can even decode live:
+With a decoder that supports reading symbols from stdin, you can even decode live
+(~75% peak CPU usage on a Raspberry Pi Zero):
 
 ```
-rtl_sdr -s 250000 -f 137.1M -g <gain> -p <ppm> - | meteor_demod --bps 8 -s 250000 --stdout - | meteor_decode -o live.bmp -
+rtl_sdr -s 230000 -f 137.1M -g <gain> -p <ppm> - | meteor_demod --bps 8 -s 230000 --stdout - | meteor_decode -o live.bmp -
 ```
-
-
