@@ -1,34 +1,30 @@
-VERSION=\"0.3-beta1\"
+# The old way of compiling and installing (0.x):
+# make 
+# sudo make install
+#
+# The new way of compiling and installing (1.x):
+# mkdir build && cd build && cmake .. && make
+# sudo make install
+#
 
-export CFLAGS += -pipe -march=native -Wall -std=c99 -pedantic -D_XOPEN_SOURCE=700 -DVERSION=${VERSION}
-export LDFLAGS +=
-PREFIX=/usr
+.PHONY: default install clean
 
-.PHONY: install debug release clean src strip
+default: build/meteor_demod
 
-default: release
-
-debug: CFLAGS += -g -D__DEBUG -Wextra
-debug: src
-release: CFLAGS += -O2 -ffast-math -flto
-release: LDFLAGS += -flto
-release: src
-
-src:
-	$(MAKE) -C $@
-
-strip:
-	$(MAKE) -C src strip
-
-clean:
-	$(MAKE) -C src clean
+build/meteor_demod:
+	@echo "==========================================================="
+	@echo "!!! Please fix your scripts to use the new build system !!!"
+	@echo "!!! Check comments in Makefile to see how               !!!"
+	@echo "==========================================================="
+	mkdir -p build
+	cd build && cmake .. && make
 
 install: default
-	@echo Installing executable file to ${PREFIX}/bin
-	@mkdir -p ${PREFIX}/bin
-	@cp src/meteor_demod ${PREFIX}/bin
-	@chmod 755 ${PREFIX}/bin/meteor_demod
+	cd build && make install
 
 uninstall:
-	@echo Removing executable file from ${PREFIX}/bin
-	@rm -f ${PREFIX}/bin/meteor_demod
+	cd build && make uninstall
+
+clean:
+	rm -rf build
+
