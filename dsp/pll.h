@@ -37,10 +37,10 @@ int pll_did_lock_once();
  * Update the carrier estimate based on a sample pair
  * (for QPSK, sample = cosample)
  *
- * @param sample in-phase sample
- * @param cosample quadrature sample
+ * @param i in-phase sample
+ * @param q quadrature sample
  */
-void  pll_update_estimate(float complex sample, float complex cosample);
+void  pll_update_estimate(float i, float q);
 
 /**
  * Mix a sample with the local oscillator
@@ -49,5 +49,15 @@ void  pll_update_estimate(float complex sample, float complex cosample);
  * @return PLL output
  */
 float complex pll_mix(float complex sample);
+
+/**
+ * Partially mix a sample with the local oscillator, returning only the I branch
+ * or the Q branch depending on the function
+ *
+ * @param sample sample to mix
+ * @return PLL output (I branch only/Q branch only)
+ */
+float pll_mix_i(float complex sample);
+float pll_mix_q(float complex sample);
 
 #endif

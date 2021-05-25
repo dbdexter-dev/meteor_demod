@@ -10,7 +10,7 @@
 
 static void update_estimate(float error);
 static void update_alpha_beta(float damp, float bw);
-static float compute_error(float complex sample, float complex cosample);
+static float compute_error(float re, float im);
 static float lut_tanh(float x);
 
 static float _freq, _phase;
@@ -63,11 +63,44 @@ pll_mix(float complex sample)
 	return sample;
 }
 
+float
+pll_mix_i(float complex sample)
+{
+	const float sine = fast_sin(-_phase);
+	const float cosine = fast_cos(-_phase);
+	const float re = crealf(sample);
+	const float im = cimagf(sample);
+	float result;
+
+	/* Mix sample (real part only) */
+	result = re*cosine - im*sine;
+	_phase += _freq;            /* Advance phase based on frequency */
+	if (_phase >= 2*M_PI) _phase -= 2*M_PI;
+
+	return result;
+}
+
+float
+pll_mix_q(float complex sample)
+{
+	const float sine = fast_sin(-_phase);
+	const float cosine = fast_cos(-_phase);
+	const float re = crealf(sample);
+	const float im = cimagf(sample);
+	float result;
+
+	result = re*sine + im*cosine;
+	_phase += _freq;            /* Advance phase based on frequency */
+	if (_phase >= 2*M_PI) _phase -= 2*M_PI;
+
+	return result;
+}
+
 void
-pll_update_estimate(float complex sample, float complex cosample)
+pll_update_estimate(float i, float q)
 {
 	float error;
-	error = compute_error(sample, cosample);
+	error = compute_error(i, q);
 
 	update_estimate(error);
 }
@@ -107,12 +140,12 @@ update_alpha_beta(float damp, float bw)
 }
 
 static float
-compute_error(float complex sample, float complex cosample)
+compute_error(float re, float im)
 {
 	float err;
 
-	err = lut_tanh(crealf(sample)) * cimagf(cosample) -
-		  lut_tanh(cimagf(cosample)) * crealf(sample);
+	err = lut_tanh(re) * im -
+	      lut_tanh(im) * re;
 
 	return err;
 }

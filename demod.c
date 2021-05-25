@@ -36,8 +36,8 @@ demod_qpsk(float complex *sample)
 			out = agc_apply(out);               /* Apply AGC */
 			out = pll_mix(out);                 /* Mix with local oscillator */
 
-			retime(out);                        /* Update symbol clock */
-			pll_update_estimate(out, out);      /* Update carrier frequency */
+			retime(out);                                    /* Update symbol clock */
+			pll_update_estimate(crealf(out), cimagf(out));  /* Update carrier frequency */
 
 			*sample = out;                      /* Write out symbol */
 			ret = 1;
@@ -48,10 +48,11 @@ demod_qpsk(float complex *sample)
 }
 
 int
-demod_oqpsk(float complex *sample)
+demod_oqpsk(float complex *restrict sample)
 {
 	float complex out;
-	static float complex inphase;
+	static float inphase;
+	float quad;
 	int i, ret;
 
 	filter_fwd_sample(&_rrc_filter, *sample);
@@ -66,18 +67,18 @@ demod_oqpsk(float complex *sample)
 				/* Intersample */
 				out = filter_get(&_rrc_filter, i);
 				out = agc_apply(out);
-				inphase = pll_mix(out);
+				inphase = pll_mix_i(out);           /* We only care about the I value */
 				break;
 			case 2:
 				/* Actual sample */
 				out = filter_get(&_rrc_filter, i);  /* Get the filter output */
 				out = agc_apply(out);               /* Apply AGC */
-				out = pll_mix(out);                 /* Mix with local oscillator */
+				quad = pll_mix_q(out);              /* We only care about the Q value */
 
-				retime(out);                        /* Update symbol clock */
-				pll_update_estimate(inphase, out);  /* Update carrier frequency */
+				*sample = inphase + I*out;
 
-				*sample = crealf(inphase) + I*cimagf(out);  /* Write out symbol */
+				retime(*sample);                      /* Update symbol clock */
+				pll_update_estimate(inphase, quad);  /* Update carrier frequency */
 				ret = 1;
 				break;
 			default:
