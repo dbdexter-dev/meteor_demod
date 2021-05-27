@@ -21,7 +21,7 @@ gen_fname()
 void
 humanize(size_t count, char *buf)
 {
-	const char suffix[] = "bkMGTPE";
+	const char suffix[] = " kMGTPE";
 	float fcount;
 	int exp_3;
 

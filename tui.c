@@ -51,9 +51,8 @@ tui_init(unsigned upd_interval)
 	_upd_interval = upd_interval;
 
 	windows_init(rows, cols);
-	print_banner(tui.banner_top);
 	tui_update_pll(0, 0, 0, 1);
-	iq_draw_quadrants(tui.iq);
+	tui_handle_resize();
 }
 
 /* Handle terminal resizing by moving the windows around */
@@ -70,7 +69,7 @@ tui_handle_resize()
 	refresh();
 	getmaxyx(stdscr, nr, nc);
 
-	iq_size = (MIN(CONSTELL_MAX, MIN(nr, nc/2))) | 0x3;
+	iq_size = (MIN(CONSTELL_MAX, MIN(nr, nc/3))) | 0x3;
 
 	wresize(tui.banner_top, 1, nc);
 	mvwin(tui.banner_top, 0, 0);
@@ -145,18 +144,18 @@ tui_update_pll(float freq, float rate, int islocked, float gain)
 	werase(tui.pll);
 	wmove(tui.pll, 0, 0);
 	wattrset(tui.pll, A_BOLD);
-	wprintw(tui.pll, "PLL info\n");
-	wattroff(tui.pll, A_BOLD);
-	wprintw(tui.pll, "Gain\tCarrier Freq\tSymbol rate\tStatus\n");
-	wprintw(tui.pll, "%.3f\t%+7.1f Hz\t%7.1f Hz\t", gain, freq, rate);
+	wprintw(tui.pll, "PLL status: ");
 	if (islocked) {
-		wattrset(tui.pll, COLOR_PAIR(PAIR_GREEN_DEF));
-		wprintw(tui.pll, "%s", "Locked");
+		wattrset(tui.pll, A_BOLD | COLOR_PAIR(PAIR_GREEN_DEF));
+		wprintw(tui.pll, "Locked\n");
 	} else {
-		wattrset(tui.pll, COLOR_PAIR(PAIR_RED_DEF));
-		wprintw(tui.pll, "%s", "Acquiring...");
+		wattrset(tui.pll, A_BOLD | COLOR_PAIR(PAIR_RED_DEF));
+		wprintw(tui.pll, "Acquiring...\n");
 	}
 	wattrset(tui.pll, COLOR_PAIR(PAIR_DEF));
+	wattroff(tui.pll, A_BOLD);
+	wprintw(tui.pll, "Gain\tCarrier freq\tSymbol rate\n");
+	wprintw(tui.pll, "%.3f\t%+7.1f Hz\t%7.1f Hz\n", gain, freq, rate);
 	wrefresh(tui.pll);
 }
 

@@ -189,8 +189,9 @@ main(int argc, char *argv[])
 	/* Get file length */
 	tmp = ftell(samples_file);
 	fseek(samples_file, 0, SEEK_END);
-	file_len = ftell(samples_file);
+	file_len = MAX(0, ftell(samples_file));
 	fseek(samples_file, tmp, SEEK_SET);
+
 
 #ifdef ENABLE_TUI
 	if (!batch) tui_init(update_interval);
@@ -305,10 +306,13 @@ thread_process(void *x)
 			_symbols_ring[ring_idx++] = MAX(-127, MIN(127, cimagf(sample)/2));
 
 			if (ring_idx >= LEN(_symbols_ring)) {
-				/* Only write symbols after the PLL locked once */
-				if (pll_did_lock_once()) fwrite(_symbols_ring, RINGSIZE, 2, soft_file);
 				ring_idx = 0;
-				parms->bytes_out += LEN(_symbols_ring);
+
+				/* Only write symbols after the PLL locked once */
+				if (pll_did_lock_once()) {
+					fwrite(_symbols_ring, RINGSIZE, 2, soft_file);
+					parms->bytes_out += LEN(_symbols_ring);
+				}
 			}
 		}
 	}
