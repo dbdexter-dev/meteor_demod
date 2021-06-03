@@ -75,7 +75,7 @@ demod_oqpsk(float complex *restrict sample)
 				out = agc_apply(out);               /* Apply AGC */
 				quad = pll_mix_q(out);              /* We only care about the Q value */
 
-				*sample = inphase + I*out;
+				*sample = inphase + I*quad;
 
 				retime(*sample);                      /* Update symbol clock */
 				pll_update_estimate(inphase, quad);  /* Update carrier frequency */
